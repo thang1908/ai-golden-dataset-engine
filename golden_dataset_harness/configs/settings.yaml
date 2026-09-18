@@ -1,0 +1,80 @@
+# =============================================================================
+# Pipeline Settings
+# =============================================================================
+
+# --- Model Configuration ---
+model:
+  # Which VLM backend to use: "qwen-vl", "internvl"
+  provider: "qwen-vl"
+
+  # API endpoint for the VLM (supports Ollama, vLLM, OpenRouter, etc.)
+  # Ví dụ cục bộ qua Ollama: "http://localhost:11434/v1"
+  # Ví dụ cục bộ qua vLLM: "http://localhost:8000/v1"
+  api_base_url: "http://localhost:11434/v1"
+
+  # Model identifier passed to the API
+  model_name: "qwen2.5vl:3b"
+
+  # API Key (để trống nếu dùng Ollama/vLLM cục bộ, hoặc điền key nếu dùng API đám mây)
+  api_key: ""
+
+  # Timeout for API calls (seconds)
+  timeout: 120
+
+  # Max retries on transient failures
+  max_retries: 3
+
+# --- Caption Generation ---
+caption:
+  # Number of caption candidates to generate per image
+  num_candidates: 5
+
+  # Temperature for diversity across candidates
+  temperature: 0.7
+
+  # Max tokens per caption
+  max_tokens: 256
+
+# --- Consensus Engine ---
+consensus:
+  # Sentence-transformer model for embedding similarity
+  embedding_model: "all-MiniLM-L6-v2"
+
+  # Minimum similarity to consider captions as agreeing
+  similarity_threshold: 0.75
+
+# --- Confidence Scoring ---
+confidence:
+  # Weights for confidence fusion
+  judge_weight: 0.4
+  consensus_weight: 0.3
+  grounding_weight: 0.3
+
+  # Threshold for auto-acceptance
+  acceptance_threshold: 0.75
+
+# --- Storage ---
+storage:
+  postgres:
+    host: "localhost"
+    port: 5432
+    database: "golden_dataset"
+    user: "postgres"
+    password: "postgres"
+
+  minio:
+    endpoint: "localhost:9000"
+    access_key: "minioadmin"
+    secret_key: "minioadmin"
+    bucket: "golden-dataset-images"
+    secure: false
+
+# --- API ---
+api:
+  host: "0.0.0.0"
+  port: 8000
+
+# --- Batch Processing ---
+batch:
+  # Max concurrent image processing tasks
+  max_concurrency: 4

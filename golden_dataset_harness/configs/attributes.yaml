@@ -1,0 +1,109 @@
+# =============================================================================
+# Person Attribute Taxonomy
+# =============================================================================
+# Each attribute defines allowed values. Models MUST only output these values.
+# Add new attributes or values here — the pipeline picks them up automatically.
+# =============================================================================
+
+gender:
+  - male
+  - female
+  - unknown
+
+age_group:
+  - child
+  - teenager
+  - young_adult
+  - middle_aged
+  - elderly
+  - unknown
+
+upper_clothing:
+  - t-shirt
+  - shirt
+  - jacket
+  - coat
+  - sweater
+  - hoodie
+  - vest
+  - dress
+  - tank_top
+  - suit
+  - unknown
+
+upper_color:
+  - black
+  - white
+  - red
+  - blue
+  - green
+  - yellow
+  - orange
+  - purple
+  - pink
+  - brown
+  - gray
+  - beige
+  - multicolor
+  - unknown
+
+lower_clothing:
+  - pants
+  - jeans
+  - shorts
+  - skirt
+  - dress
+  - leggings
+  - unknown
+
+lower_color:
+  - black
+  - white
+  - red
+  - blue
+  - green
+  - yellow
+  - brown
+  - gray
+  - beige
+  - multicolor
+  - unknown
+
+bag:
+  - backpack
+  - handbag
+  - shoulder_bag
+  - messenger_bag
+  - suitcase
+  - plastic_bag
+  - none
+  - unknown
+
+hair:
+  - long_hair
+  - short_hair
+  - bald
+  - tied_hair
+  - hat_covered
+  - unknown
+
+hat:
+  - baseball_cap
+  - beanie
+  - sun_hat
+  - helmet
+  - none
+  - unknown
+
+glasses:
+  - regular
+  - sunglasses
+  - none
+  - unknown
+
+footwear:
+  - sneakers
+  - boots
+  - sandals
+  - formal_shoes
+  - unknown

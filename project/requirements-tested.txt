@@ -1,0 +1,14 @@
+# Tested on Python 3.11, macOS arm64; direct dependencies.
+torch==2.14.0
+transformers==4.57.6
+datasets==4.8.5
+accelerate==1.15.0
+sentencepiece==0.2.2
+safetensors==0.8.0
+fastapi==0.141.1
+uvicorn==0.53.0
+pytest==9.1.1
+httpx==0.28.1
+underthesea==8.3.0
+mlflow==3.16.1
+filelock==4.0.0

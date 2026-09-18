@@ -1,0 +1,25 @@
+{
+  "backbone": "vinai/phobert-base",
+  "revision": "main",
+  "max_length": 128,
+  "dropout": 0.1,
+  "segmentation": "underthesea",
+  "batch_size": 16,
+  "epochs": 5,
+  "learning_rate": 2e-05,
+  "weight_decay": 0.01,
+  "warmup_ratio": 0.1,
+  "gradient_accumulation_steps": 1,
+  "max_grad_norm": 1.0,
+  "seed": 42,
+  "mixed_precision": "no",
+  "categorical_threshold": 0.0,
+  "accessory_threshold": 0.5,
+  "loss_weights": {
+    "gender": 1.0,
+    "clothing_type": 1.0,
+    "clothing_color": 1.0,
+    "hair": 1.0,
+    "accessory": 1.0
+  }
+}

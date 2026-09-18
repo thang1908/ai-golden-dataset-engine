@@ -1,0 +1,125 @@
+[
+  {
+    "text": "cô gái mặc áo sơ mi trắng tóc đen mang túi đỏ",
+    "gender": "female",
+    "clothing_type": "shirt",
+    "clothing_color": "white",
+    "hair_color": "black",
+    "hair_length": "unknown",
+    "accessories": [
+      "bag"
+    ]
+  },
+  {
+    "text": "người đàn ông áo khoác đen đeo kính",
+    "gender": "male",
+    "clothing_type": "jacket",
+    "clothing_color": "black",
+    "hair_color": "unknown",
+    "hair_length": "unknown",
+    "accessories": [
+      "glasses"
+    ]
+  },
+  {
+    "text": "người mặc áo thun xanh dương đội mũ",
+    "gender": "unknown",
+    "clothing_type": "t-shirt",
+    "clothing_color": "blue",
+    "hair_color": "unknown",
+    "hair_length": "unknown",
+    "accessories": [
+      "hat"
+    ]
+  },
+  {
+    "text": "chị mặc váy đỏ tóc dài màu nâu",
+    "gender": "female",
+    "clothing_type": "dress",
+    "clothing_color": "red",
+    "hair_color": "brown",
+    "hair_length": "long",
+    "accessories": []
+  },
+  {
+    "text": "anh áo hoodie xám mang ba lô và khẩu trang",
+    "gender": "male",
+    "clothing_type": "hoodie",
+    "clothing_color": "gray",
+    "hair_color": "unknown",
+    "hair_length": "unknown",
+    "accessories": [
+      "backpack",
+      "mask"
+    ]
+  },
+  {
+    "text": "người tóc ngắn màu vàng mặc áo măng tô nâu",
+    "gender": "unknown",
+    "clothing_type": "coat",
+    "clothing_color": "brown",
+    "hair_color": "blonde",
+    "hair_length": "short",
+    "accessories": []
+  },
+  {
+    "text": "người áo xanh lá xách túi và đeo kính",
+    "gender": "unknown",
+    "clothing_type": "unknown",
+    "clothing_color": "green",
+    "hair_color": "unknown",
+    "hair_length": "unknown",
+    "accessories": [
+      "bag",
+      "glasses"
+    ]
+  },
+  {
+    "text": "cô ấy áo vàng tóc ngắn đen",
+    "gender": "female",
+    "clothing_type": "unknown",
+    "clothing_color": "yellow",
+    "hair_color": "black",
+    "hair_length": "short",
+    "accessories": []
+  },
+  {
+    "text": "tìm một người trong camera",
+    "gender": "unknown",
+    "clothing_type": "unknown",
+    "clothing_color": "unknown",
+    "hair_color": "unknown",
+    "hair_length": "unknown",
+    "accessories": []
+  },
+  {
+    "text": "người không đeo kính mặc áo trắng",
+    "gender": "unknown",
+    "clothing_type": "unknown",
+    "clothing_color": "white",
+    "hair_color": "unknown",
+    "hair_length": "unknown",
+    "accessories": []
+  },
+  {
+    "text": "người đàn ông đội mũ mang túi",
+    "gender": "male",
+    "clothing_type": "unknown",
+    "clothing_color": "unknown",
+    "hair_color": "unknown",
+    "hair_length": "unknown",
+    "accessories": [
+      "hat",
+      "bag"
+    ]
+  },
+  {
+    "text": "người phụ nữ áo sơ mi đen tóc dài",
+    "gender": "female",
+    "clothing_type": "shirt",
+    "clothing_color": "black",
+    "hair_color": "unknown",
+    "hair_length": "long",
+    "accessories": []
+  }
+]
