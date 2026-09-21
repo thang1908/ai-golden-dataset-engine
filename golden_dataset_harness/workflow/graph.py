@@ -21,16 +21,16 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from PIL import Image
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
+from PIL import Image
 
-from golden_dataset_harness.agents.caption_agent import create_caption_node
 from golden_dataset_harness.agents.attribute_agent import create_attribute_node
+from golden_dataset_harness.agents.caption_agent import create_caption_node
+from golden_dataset_harness.agents.confidence import create_confidence_node
 from golden_dataset_harness.agents.consensus import create_consensus_node
 from golden_dataset_harness.agents.grounding_agent import create_grounding_node
 from golden_dataset_harness.agents.judge_agent import create_judge_node
-from golden_dataset_harness.agents.confidence import create_confidence_node
 from golden_dataset_harness.models.factory import create_vlm
 from golden_dataset_harness.schemas.annotation import ImageMetadata
 from golden_dataset_harness.schemas.state import PipelineState
@@ -95,7 +95,11 @@ async def write_accepted_node(state: PipelineState) -> dict[str, Any]:
     """Terminal node for auto-accepted annotations."""
     annotation = state.get("annotation")
     if annotation:
-        logger.info("✅ Auto-accepted: %s (confidence=%.3f)", annotation.image_id, annotation.confidence)
+        logger.info(
+            "✅ Auto-accepted: %s (confidence=%.3f)",
+            annotation.image_id,
+            annotation.confidence,
+        )
     return {}
 
 
@@ -172,8 +176,7 @@ def build_annotation_graph(settings: dict[str, Any]) -> CompiledStateGraph:
     caption_node = create_caption_node(vlm, caption_cfg)
     attribute_node = create_attribute_node(vlm, taxonomy_path)
     consensus_node = create_consensus_node(
-        embedding_model_name=consensus_cfg.get("embedding_model", "all-MiniLM-L6-v2"),
-        similarity_threshold=consensus_cfg.get("similarity_threshold", 0.75),
+        similarity_threshold=consensus_cfg.get("similarity_threshold", 0.35),
     )
     grounding_node = create_grounding_node(vlm)
     judge_node = create_judge_node(vlm)

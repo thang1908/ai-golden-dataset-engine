@@ -20,11 +20,8 @@ caption:
 
 # --- Consensus Engine ---
 consensus:
-  # Sentence-transformer model for embedding similarity
-  embedding_model: "all-MiniLM-L6-v2"
-
-  # Minimum similarity to consider captions as agreeing
-  similarity_threshold: 0.75
+  # Minimum word-set similarity to consider captions as agreeing.
+  similarity_threshold: 0.35
 
 # --- Confidence Scoring ---
 confidence:

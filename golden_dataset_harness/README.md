@@ -9,7 +9,7 @@ Pipeline tạo golden dataset từ ảnh người. Hệ thống gửi ảnh tớ
     → Quality Judge → Confidence → Auto Accept / Human Review
 ```
 
-Model được gọi từ xa. Repository không tải hoặc chạy PhoBERT, Qwen hay InternVL cục bộ. Provider `mock` chỉ phục vụ test tự động.
+Model được gọi từ xa qua vLLM. Provider `mock` chỉ phục vụ test tự động.
 
 ## 1. Cài đặt
 
@@ -74,26 +74,6 @@ curl -X POST http://127.0.0.1:8000/annotate \
 ```
 
 Khi có request đầu tiên, client gọi `POST /oauth/token`, cache access token theo `expires_in`, sau đó gọi `POST /v1/chat/completions`. Token được làm mới trước khi hết hạn và được lấy lại nếu model API trả HTTP 401.
-
-## vLLM API Gateway
-
-Chạy gateway riêng nếu bạn muốn gọi từng API vLLM qua FastAPI. Gateway lấy OAuth token ở server; client không cần và không nhận access token.
-
-```bash
-uvicorn golden_dataset_harness.api.vllm_gateway:app --reload --port 8001
-```
-
-Mở [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs). Các route chính là `GET /vllm/models`, `POST /vllm/chat`, `POST /vllm/chat/stream`, `POST /vllm/responses`, `POST /vllm/embeddings`, `POST /vllm/rerank`, nhóm `/vllm/files`, `/vllm/batches` và `POST /vllm/audio/transcriptions`.
-
-Ví dụ gọi chat qua gateway:
-
-```bash
-curl -X POST http://127.0.0.1:8001/vllm/chat \
-  -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"Xin chào!"}]}'
-```
-
-Route `/vllm/chat` hỗ trợ luôn vision, JSON Schema, thinking và guardrail bằng payload tương thích OpenAI. Nếu dùng kiểu SDK, trường `extra_body` được gateway tự chuyển thành các trường JSON cấp cao nhất trước khi gửi tới vLLM.
 
 Các endpoint:
 
