@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "golden-dataset-harness"
@@ -24,13 +24,6 @@ dependencies = [
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
 
-    # Database
-    "sqlalchemy[asyncio]>=2.0",
-    "asyncpg>=0.29",
-
-    # Object storage
-    "minio>=7.2",
-
     # ML / Embeddings
     "sentence-transformers>=3.0",
     "numpy>=1.26",
@@ -52,6 +45,7 @@ dev = [
     "pytest-asyncio>=0.23",
     "pytest-cov>=5.0",
     "ruff>=0.4",
+    "mypy>=1.10",
 ]
 
 [tool.pytest.ini_options]
@@ -64,3 +58,7 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.setuptools.packages.find]
+include = ["golden_dataset_harness*"]
+exclude = ["tests*"]

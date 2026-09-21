@@ -1,9 +1,0 @@
-__pycache__/
-.pytest_cache/
-checkpoints/
-*.pyc
-.venv/
-mlflow.db*
-mlartifacts/
-mlruns/
-.*.training.lock

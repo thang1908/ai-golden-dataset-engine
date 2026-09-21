@@ -1,0 +1,11 @@
+.git/
+.env
+.venv/
+golden_dataset_harness/.env
+golden_dataset_harness/.venv/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+output/
+*.py[cod]
+*.log

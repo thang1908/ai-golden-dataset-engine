@@ -10,16 +10,14 @@ import asyncio
 import logging
 import uuid
 from contextlib import asynccontextmanager
-from typing import Any
-
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from golden_dataset_harness.api.label_studio import format_for_label_studio
-from golden_dataset_harness.evaluation.metrics import compute_pipeline_stats
 from golden_dataset_harness.schemas.annotation import AnnotationRecord
 from golden_dataset_harness.workflow.graph import build_annotation_graph, load_settings
 

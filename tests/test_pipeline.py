@@ -6,9 +6,6 @@ ensuring all components integrate correctly without requiring a GPU.
 
 from __future__ import annotations
 
-import asyncio
-import json
-import os
 from pathlib import Path
 
 import pytest
@@ -218,6 +215,7 @@ class TestFullPipeline:
         """Test that the graph compiles without errors."""
         from golden_dataset_harness.workflow.graph import build_annotation_graph, load_settings
         settings = load_settings()
+        settings["model"]["provider"] = "mock"
         graph = build_annotation_graph(settings)
         assert graph is not None
 
@@ -228,6 +226,7 @@ class TestFullPipeline:
 
         settings = load_settings()
         settings["model"]["provider"] = "mock"
+        settings["caption"]["num_candidates"] = 1
         graph = build_annotation_graph(settings)
 
         result = await graph.ainvoke({

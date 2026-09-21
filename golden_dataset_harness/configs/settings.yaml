@@ -4,25 +4,8 @@
 
 # --- Model Configuration ---
 model:
-  # Which VLM backend to use: "qwen-vl", "internvl"
-  provider: "qwen-vl"
-
-  # API endpoint for the VLM (supports Ollama, vLLM, OpenRouter, etc.)
-  # Ví dụ cục bộ qua Ollama: "http://localhost:11434/v1"
-  # Ví dụ cục bộ qua vLLM: "http://localhost:8000/v1"
-  api_base_url: "http://localhost:11434/v1"
-
-  # Model identifier passed to the API
-  model_name: "qwen2.5vl:3b"
-
-  # API Key (để trống nếu dùng Ollama/vLLM cục bộ, hoặc điền key nếu dùng API đám mây)
-  api_key: ""
-
-  # Timeout for API calls (seconds)
-  timeout: 120
-
-  # Max retries on transient failures
-  max_retries: 3
+  # Host, OAuth credentials and model are read from golden_dataset_harness/.env.
+  provider: "openai-compatible"
 
 # --- Caption Generation ---
 caption:
@@ -52,22 +35,6 @@ confidence:
 
   # Threshold for auto-acceptance
   acceptance_threshold: 0.75
-
-# --- Storage ---
-storage:
-  postgres:
-    host: "localhost"
-    port: 5432
-    database: "golden_dataset"
-    user: "postgres"
-    password: "postgres"
-
-  minio:
-    endpoint: "localhost:9000"
-    access_key: "minioadmin"
-    secret_key: "minioadmin"
-    bucket: "golden-dataset-images"
-    secure: false
 
 # --- API ---
 api:

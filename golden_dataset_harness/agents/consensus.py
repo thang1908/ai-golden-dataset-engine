@@ -11,7 +11,8 @@ created by the factory function.
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
@@ -158,6 +159,11 @@ def create_consensus_node(
     _encoder_cache: list[Any] = []  # mutable container for closure caching
 
     async def node(state: PipelineState) -> dict[str, Any]:
+        candidates = state.get("caption_candidates", [])
+        if len(candidates) <= 1:
+            return {"consensus": _compute_consensus(
+                candidates, np.empty((len(candidates), 0)), similarity_threshold
+            )}
         if not _encoder_cache:
             from sentence_transformers import SentenceTransformer
 

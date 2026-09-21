@@ -159,12 +159,7 @@ def build_annotation_graph(settings: dict[str, Any]) -> CompiledStateGraph:
     # --- Create the VLM instance ---
     model_cfg = settings.get("model", {})
     vlm = create_vlm(
-        provider=model_cfg.get("provider", "qwen-vl"),
-        api_base_url=model_cfg.get("api_base_url", "http://localhost:11434/v1"),
-        model_name=model_cfg.get("model_name", "qwen2.5-vl"),
-        api_key=model_cfg.get("api_key", ""),
-        timeout=model_cfg.get("timeout", 60),
-        max_retries=model_cfg.get("max_retries", 3),
+        provider=model_cfg.get("provider", "openai-compatible"),
     )
 
     # --- Create agent nodes via factories ---

@@ -1,131 +1,147 @@
 # Golden Dataset Harness
 
-AI-powered annotation pipeline for generating high-quality golden datasets from person images (CCTV/person search scenarios).
+Pipeline tạo golden dataset từ ảnh người. Hệ thống gửi ảnh tới dịch vụ vision model qua API OpenAI-compatible của vLLM, tự lấy OAuth access token và trả về caption, thuộc tính, grounding, quality score và trạng thái review.
 
-## Architecture
+## Luồng xử lý
 
-```
-Image Dataset → Data Loader → Annotation Orchestrator (LangGraph)
-                                    │
-                    ┌───────────────┼───────────────┐
-                    │               │               │
-              Caption Agent   Attribute Agent  Grounding Agent
-                    │               │               │
-                    └───────────────┼───────────────┘
-                                    │
-                            Consensus Engine
-                                    │
-                            Quality Judge
-                                    │
-                          Confidence Scoring
-                                    │
-                        ┌───────────┴───────────┐
-                   Auto Accept            Human Review
-                        │                       │
-                        └───────────┬───────────┘
-                                    │
-                          Golden Dataset Storage
+```text
+Ảnh → Caption + Attribute Extraction → Consensus → Grounding
+    → Quality Judge → Confidence → Auto Accept / Human Review
 ```
 
-## Quick Start
+Model được gọi từ xa. Repository không tải hoặc chạy PhoBERT, Qwen hay InternVL cục bộ. Provider `mock` chỉ phục vụ test tự động.
 
-### 1. Install Dependencies
+## 1. Cài đặt
+
+Yêu cầu Python 3.11 trở lên. Chạy từ thư mục gốc repository:
 
 ```bash
-# Create and activate virtual environment
-python -m venv .venv
-source .venv/bin/activate
-
-# Install the package
-pip install -e ".[dev]"
+python3 -m venv golden_dataset_harness/.venv
+source golden_dataset_harness/.venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
 ```
 
-### 2. Run with Mock VLM (No GPU Required)
+Nếu virtual environment đã tồn tại, chỉ cần `source golden_dataset_harness/.venv/bin/activate`.
+
+## 2. Tạo cấu hình môi trường
 
 ```bash
-# Process images in a directory
-python -m golden_dataset_harness.workflow.runner \
-    --input-dir ./sample_images/ \
-    --output-dir ./output/
-
-# Output: ./output/dataset.jsonl
+cp golden_dataset_harness/.env.example golden_dataset_harness/.env
 ```
 
-### 3. Run the API Server
+Điền thông tin do nền tảng cung cấp vào `golden_dataset_harness/.env`:
+
+```dotenv
+VLLM_BASE_URL=https://your-real-host
+VLLM_CLIENT_ID=your-client-id
+VLLM_CLIENT_SECRET=your-client-secret
+VLLM_PROJECT_ID=your-project-id
+VLLM_MODEL=your-model-name
+
+VLLM_TIMEOUT_SECONDS=120
+VLLM_MAX_RETRIES=3
+VLLM_MAX_TOKENS=1024
+VLLM_MAX_IMAGE_BYTES=60000
+VLLM_ENABLE_THINKING=false
+VLLM_GUARDRAIL=off
+VLLM_GUARD_OUTPUT_MODE=refuse
+VLLM_TOKEN_REFRESH_SKEW_SECONDS=60
+```
+
+`VLLM_BASE_URL` có thể là `https://host` hoặc `https://host/v1`; code sẽ chuẩn hoá URL. Không điền `/chat/completions` vào biến này.
+
+Credential chỉ nằm trong `.env`. File này đã được loại khỏi Git và Docker build context.
+
+Kiểm tra cấu hình mà không in secret:
+
+```bash
+python -c "from golden_dataset_harness.models.provider_settings import ProviderSettings; s=ProviderSettings(); print(s.oauth_url, s.openai_base_url, s.vllm_model)"
+```
+
+## 3. Chạy API
 
 ```bash
 uvicorn golden_dataset_harness.api.main:app --reload --port 8000
 ```
 
-Then open http://localhost:8000/docs for the interactive API.
-
-### 4. Run with Docker Compose
+Mở [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs), chọn `POST /annotate`, rồi upload một ảnh. Có thể gọi bằng curl:
 
 ```bash
-cd golden_dataset_harness
-docker-compose up --build
+curl -X POST http://127.0.0.1:8000/annotate \
+  -H "accept: application/json" \
+  -F "file=@/duong-dan/toi/person.jpg"
 ```
 
-This starts:
-- **App** on port 8000 (FastAPI)
-- **PostgreSQL** on port 5432
-- **MinIO** on ports 9000 (API) / 9001 (Console)
+Khi có request đầu tiên, client gọi `POST /oauth/token`, cache access token theo `expires_in`, sau đó gọi `POST /v1/chat/completions`. Token được làm mới trước khi hết hạn và được lấy lại nếu model API trả HTTP 401.
 
-## API Endpoints
+## vLLM API Gateway
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/annotate` | Annotate a single image |
-| `POST` | `/annotate/batch` | Annotate multiple images |
-| `GET` | `/annotations/{image_id}` | Get annotation by ID |
-| `GET` | `/annotations?status=pending_review` | Query by status |
-| `GET` | `/export/label-studio` | Export for Label Studio |
-| `POST` | `/review/{image_id}` | Submit human review |
-| `GET` | `/stats` | Pipeline statistics |
+Chạy gateway riêng nếu bạn muốn gọi từng API vLLM qua FastAPI. Gateway lấy OAuth token ở server; client không cần và không nhận access token.
 
-## Configuration
+```bash
+uvicorn golden_dataset_harness.api.vllm_gateway:app --reload --port 8001
+```
 
-### Model Provider
+Mở [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs). Các route chính là `GET /vllm/models`, `POST /vllm/chat`, `POST /vllm/chat/stream`, `POST /vllm/responses`, `POST /vllm/embeddings`, `POST /vllm/rerank`, nhóm `/vllm/files`, `/vllm/batches` và `POST /vllm/audio/transcriptions`.
 
-Edit `configs/settings.yaml`:
+Ví dụ gọi chat qua gateway:
+
+```bash
+curl -X POST http://127.0.0.1:8001/vllm/chat \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"Xin chào!"}]}'
+```
+
+Route `/vllm/chat` hỗ trợ luôn vision, JSON Schema, thinking và guardrail bằng payload tương thích OpenAI. Nếu dùng kiểu SDK, trường `extra_body` được gateway tự chuyển thành các trường JSON cấp cao nhất trước khi gửi tới vLLM.
+
+Các endpoint:
+
+| Method | Path | Chức năng |
+|---|---|---|
+| `POST` | `/annotate` | Xử lý một ảnh |
+| `POST` | `/annotate/batch` | Xử lý nhiều ảnh |
+| `GET` | `/annotations/{image_id}` | Lấy annotation theo ID |
+| `GET` | `/annotations?status=pending_review` | Lọc theo trạng thái |
+| `GET` | `/export/label-studio` | Export dữ liệu review |
+| `POST` | `/review/{image_id}` | Gửi kết quả human review |
+| `GET` | `/stats` | Thống kê pipeline |
+
+## 4. Chạy batch
+
+```bash
+python -m golden_dataset_harness.workflow.runner \
+  --input-dir ./sample_images \
+  --output-dir ./output \
+  --concurrency 2
+```
+
+Kết quả được ghi vào `output/dataset.jsonl`. Một ảnh tạo nhiều lời gọi model, vì vậy nên bắt đầu với concurrency 1 hoặc 2 rồi tăng theo rate limit của dịch vụ.
+
+## 5. Chạy bằng Docker
+
+```bash
+docker compose -f golden_dataset_harness/docker-compose.yml up --build
+```
+
+Compose tự đọc `golden_dataset_harness/.env` và chạy API ở cổng 8000.
+
+## Cấu hình pipeline
+
+`configs/settings.yaml` chọn provider và các tham số của pipeline. Host, credential và tên model luôn lấy từ `.env`.
 
 ```yaml
 model:
-  provider: "mock"        # Options: mock, qwen-vl, internvl
-  api_base_url: "http://localhost:8001/v1"
-  model_name: "Qwen2.5-VL-7B-Instruct"
+  provider: "openai-compatible"
 ```
 
-### Attribute Taxonomy
+Taxonomy thuộc tính nằm tại `configs/attributes.yaml`. Confidence threshold, trọng số và số caption candidates nằm tại `configs/settings.yaml`.
 
-Edit `configs/attributes.yaml` to add/remove attributes and allowed values.
+## Structured output
 
-### Confidence Threshold
+Các tác vụ attribute, grounding và judge sử dụng `response_format.type=json_schema`. Adapter kiểm tra JSON trả về và từ chối giá trị attribute ngoài taxonomy. Ảnh được chuyển sang JPEG và nén trước khi Base64 để giữ request dưới giới hạn message content của API.
 
-```yaml
-confidence:
-  judge_weight: 0.4
-  consensus_weight: 0.3
-  grounding_weight: 0.3
-  acceptance_threshold: 0.75
-```
-
-## Swapping Models
-
-The system uses an abstract `BaseVisionLanguageModel` interface. To add a new model:
-
-1. Create a new file in `models/` (e.g., `models/my_model.py`)
-2. Implement `BaseVisionLanguageModel` with methods:
-   - `generate_caption(image, prompt)`
-   - `extract_attributes(image, taxonomy)`
-   - `verify_claim(image, claim)`
-   - `judge_quality(image, caption, attributes)`
-3. Register in `models/factory.py`
-4. Set `provider: "my-model"` in `settings.yaml`
-
-## Output Format
-
-Each annotation in `dataset.jsonl`:
+Ví dụ annotation:
 
 ```json
 {
@@ -143,69 +159,43 @@ Each annotation in `dataset.jsonl`:
   "grounding_score": 0.90,
   "judge_score": 0.88,
   "review_status": "auto_accepted",
-  "model_version": "mock-vlm-v1"
+  "model_version": "your-model-name"
 }
 ```
 
-## Human Review (Label Studio)
+## Test
 
-Low-confidence annotations are exported for human review:
-
-```bash
-curl http://localhost:8000/export/label-studio | jq .
-```
-
-Import the JSON output into Label Studio for efficient review.
-
-## Project Structure
-
-```
-golden_dataset_harness/
-├── agents/                 # LangGraph pipeline nodes
-│   ├── caption_agent.py    # Multi-caption generation
-│   ├── attribute_agent.py  # Structured attribute extraction
-│   ├── grounding_agent.py  # Hallucination detection
-│   ├── judge_agent.py      # Quality evaluation
-│   ├── consensus.py        # Semantic clustering & voting
-│   └── confidence.py       # Score fusion & routing
-├── api/                    # FastAPI HTTP interface
-│   ├── main.py             # Endpoints
-│   └── label_studio.py     # Label Studio integration
-├── configs/                # YAML configuration
-│   ├── attributes.yaml     # Attribute taxonomy
-│   └── settings.yaml       # Pipeline settings
-├── evaluation/             # Metrics
-│   └── metrics.py
-├── models/                 # VLM abstraction layer
-│   ├── base.py             # Abstract interface
-│   ├── mock_vlm.py         # Mock (testing)
-│   ├── qwen_vl.py          # Qwen2.5-VL
-│   ├── internvl.py         # InternVL
-│   └── factory.py          # Model registry
-├── schemas/                # Pydantic data contracts
-│   ├── annotation.py       # Domain models
-│   └── state.py            # LangGraph state
-├── storage/                # Persistence layer
-│   ├── postgres.py         # PostgreSQL ORM
-│   ├── minio_client.py     # S3/MinIO abstraction
-│   └── dataset_writer.py   # Output writer
-├── workflow/               # Pipeline orchestration
-│   ├── graph.py            # LangGraph StateGraph
-│   └── runner.py           # Batch runner
-├── docker-compose.yml
-├── Dockerfile
-└── pyproject.toml
-```
-
-## Development
+Test dùng mock HTTP transport, không gọi dịch vụ thật và không cần credential thật:
 
 ```bash
-# Run tests
-pytest tests/ -v
+python -m pytest tests -q
+```
 
-# Type checking
-mypy golden_dataset_harness/
+Các test bao phủ OAuth token cache/refresh, retry khi HTTP 401, payload vision Base64, JSON Schema, kiểm tra taxonomy và pipeline end-to-end.
 
-# Lint
-ruff check golden_dataset_harness/
+## Các file chính
+
+```text
+.
+├── pyproject.toml
+├── tests/
+└── golden_dataset_harness/
+    ├── .env.example
+    ├── agents/
+    ├── api/main.py
+    ├── configs/
+    │   ├── attributes.yaml
+    │   └── settings.yaml
+    ├── models/
+    │   ├── base.py
+    │   ├── factory.py
+    │   ├── mock_vlm.py
+    │   ├── oauth.py
+    │   ├── openai_compatible.py
+    │   └── provider_settings.py
+    ├── workflow/
+    │   ├── graph.py
+    │   └── runner.py
+    ├── docker-compose.yml
+    └── Dockerfile
 ```
