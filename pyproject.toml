@@ -3,35 +3,16 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "golden-dataset-harness"
+name = "g1-direct-annotation"
 version = "0.1.0"
-description = "AI Golden Dataset Generation Harness for person image annotation"
-readme = "golden_dataset_harness/README.md"
+description = "Direct V-LLM Medium generation for person-image captions and attributes"
+readme = "g1_direct_annotation/README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 
 dependencies = [
-    # Workflow orchestration
-    "langgraph>=0.2",
-    "langchain-core>=0.3",
-
-    # API
-    "fastapi>=0.115",
-    "uvicorn[standard]>=0.30",
-    "python-multipart>=0.0.9",
-
-    # Data validation
-    "pydantic>=2.0",
-    "pydantic-settings>=2.0",
-
-    # HTTP client (for VLM API calls)
     "httpx>=0.27",
-
-    # Image processing
     "Pillow>=10.0",
-
-    # Configuration
-    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -56,9 +37,12 @@ line-length = 100
 select = ["E", "F", "I", "N", "W", "UP"]
 
 [tool.setuptools.packages.find]
-include = ["golden_dataset_harness*", "c1_vllm_medium*", "c2_siglip*"]
+include = ["g1_direct_annotation*", "g2_facts_then_caption*", "g3_consensus_annotation*", "g4_critic_verifier*", "g5_qa_refinement*"]
 exclude = ["tests*"]
 
 [tool.setuptools.package-data]
-golden_dataset_harness = ["configs/*.yaml", "api/templates/*.html"]
-c1_vllm_medium = ["attribute_schema.json", ".env.example"]
+g1_direct_annotation = ["attribute_schema.json", ".env.example"]
+g2_facts_then_caption = ["attribute_schema.json", ".env.example"]
+g3_consensus_annotation = ["attribute_schema.json", ".env.example"]
+g4_critic_verifier = ["attribute_schema.json", ".env.example"]
+g5_qa_refinement = ["attribute_schema.json", ".env.example"]

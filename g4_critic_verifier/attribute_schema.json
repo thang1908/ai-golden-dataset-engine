@@ -1,0 +1,367 @@
+{
+  "version": 1,
+  "source": "docs/person_attributes_and_captions_vi.md",
+  "num_attributes": 21,
+  "total_logits": 200,
+  "cell_rules": {
+    "single_label": "exactly one class code",
+    "multi_label": "class codes joined by '|', no empty or repeated entries",
+    "annotated_empty_set": "none",
+    "not_annotated": "empty cell, or identity absent from the table",
+    "matching": "exact after stripping surrounding whitespace; case-sensitive"
+  },
+  "attributes": [
+    {
+      "name": "age",
+      "type": "single_label",
+      "num_classes": 6,
+      "classes": [
+        "child",
+        "young_adult",
+        "adult",
+        "middle_aged",
+        "elderly",
+        "unknown"
+      ]
+    },
+    {
+      "name": "gender",
+      "type": "single_label",
+      "num_classes": 2,
+      "classes": [
+        "male",
+        "female"
+      ]
+    },
+    {
+      "name": "body_build",
+      "type": "single_label",
+      "num_classes": 3,
+      "classes": [
+        "heavy",
+        "average",
+        "slim"
+      ]
+    },
+    {
+      "name": "upper_clothing_type",
+      "type": "single_label",
+      "num_classes": 25,
+      "classes": [
+        "tshirt_short_sleeve",
+        "tshirt_long_sleeve",
+        "sports_jersey",
+        "polo_short_sleeve",
+        "polo_long_sleeve",
+        "shirt_short_sleeve",
+        "shirt_long_sleeve",
+        "tank_top",
+        "sweatshirt",
+        "hoodie",
+        "sweater",
+        "cardigan",
+        "vest",
+        "blazer",
+        "jacket",
+        "windbreaker",
+        "coat",
+        "raincoat",
+        "uniform",
+        "traditional",
+        "sun_protective_jacket",
+        "one_piece_dress",
+        "swimwear",
+        "shirtless",
+        "other"
+      ]
+    },
+    {
+      "name": "upper_clothing_color",
+      "type": "single_label",
+      "num_classes": 15,
+      "classes": [
+        "black",
+        "white",
+        "gray",
+        "red",
+        "orange",
+        "yellow",
+        "green",
+        "teal",
+        "blue",
+        "purple",
+        "pink",
+        "brown",
+        "beige_cream",
+        "multicolor",
+        "unknown"
+      ]
+    },
+    {
+      "name": "lower_clothing_type",
+      "type": "single_label",
+      "num_classes": 16,
+      "classes": [
+        "dress_trousers",
+        "jeans",
+        "chinos",
+        "cargo_pants",
+        "sweatpants",
+        "legging",
+        "regular_shorts",
+        "knee_length_shorts",
+        "tailored_shorts",
+        "skirt_short",
+        "skirt_knee_length",
+        "skirt_long",
+        "overalls",
+        "traditional",
+        "swimwear",
+        "unknown"
+      ]
+    },
+    {
+      "name": "lower_clothing_color",
+      "type": "single_label",
+      "num_classes": 15,
+      "classes": [
+        "black",
+        "white",
+        "gray",
+        "red",
+        "orange",
+        "yellow",
+        "green",
+        "teal",
+        "blue",
+        "purple",
+        "pink",
+        "brown",
+        "beige_cream",
+        "multicolor",
+        "unknown"
+      ]
+    },
+    {
+      "name": "clothing_style",
+      "type": "single_label",
+      "num_classes": 5,
+      "classes": [
+        "formal_style",
+        "casual_style",
+        "workwear_style",
+        "sportswear_style",
+        "traditional_style"
+      ]
+    },
+    {
+      "name": "upper_pattern",
+      "type": "single_label",
+      "num_classes": 7,
+      "classes": [
+        "solid",
+        "striped",
+        "checked",
+        "floral",
+        "graphic",
+        "polka_dot",
+        "unknown"
+      ]
+    },
+    {
+      "name": "footwear_type",
+      "type": "single_label",
+      "num_classes": 13,
+      "classes": [
+        "casual_sneakers",
+        "athletic_shoes",
+        "dress_shoes",
+        "loafers",
+        "boots",
+        "sandals",
+        "slippers",
+        "flip_flops",
+        "high_heels",
+        "flats",
+        "roller_skates",
+        "barefoot",
+        "unknown"
+      ]
+    },
+    {
+      "name": "bag_type",
+      "type": "multi_label",
+      "num_classes": 11,
+      "classes": [
+        "backpack",
+        "handbag",
+        "crossbody_bag",
+        "shoulder_bag",
+        "tote_bag",
+        "shopping_bag",
+        "plastic_bag",
+        "briefcase",
+        "waist_bag",
+        "duffel_bag",
+        "suitcase"
+      ]
+    },
+    {
+      "name": "bag_color",
+      "type": "multi_label",
+      "num_classes": 15,
+      "classes": [
+        "black",
+        "white",
+        "gray",
+        "red",
+        "orange",
+        "yellow",
+        "green",
+        "teal",
+        "blue",
+        "purple",
+        "pink",
+        "brown",
+        "beige_cream",
+        "multicolor",
+        "unknown"
+      ]
+    },
+    {
+      "name": "headwear",
+      "type": "single_label",
+      "num_classes": 8,
+      "classes": [
+        "none",
+        "hood",
+        "baseball_cap",
+        "brimmed_hat",
+        "beanie",
+        "conical_hat",
+        "helmet",
+        "other"
+      ]
+    },
+    {
+      "name": "eyewear",
+      "type": "single_label",
+      "num_classes": 4,
+      "classes": [
+        "none",
+        "eyeglasses",
+        "sunglasses",
+        "unknown"
+      ]
+    },
+    {
+      "name": "face_mask",
+      "type": "single_label",
+      "num_classes": 5,
+      "classes": [
+        "none",
+        "cloth_mask",
+        "medical_mask",
+        "full_face_covering",
+        "unknown"
+      ]
+    },
+    {
+      "name": "other_accessories",
+      "type": "multi_label",
+      "num_classes": 8,
+      "classes": [
+        "headscarf",
+        "headband",
+        "headphones",
+        "scarf",
+        "watch",
+        "gloves",
+        "tie",
+        "lanyard"
+      ]
+    },
+    {
+      "name": "hair_length",
+      "type": "single_label",
+      "num_classes": 6,
+      "classes": [
+        "unknown",
+        "shaved",
+        "balding",
+        "short_hair",
+        "medium_hair",
+        "long_hair"
+      ]
+    },
+    {
+      "name": "hair_texture",
+      "type": "single_label",
+      "num_classes": 3,
+      "classes": [
+        "unknown",
+        "straight_hair",
+        "curly_hair"
+      ]
+    },
+    {
+      "name": "hairstyle",
+      "type": "single_label",
+      "num_classes": 5,
+      "classes": [
+        "unknown",
+        "loose_hair",
+        "ponytail",
+        "bun",
+        "braided_hair"
+      ]
+    },
+    {
+      "name": "hair_color",
+      "type": "single_label",
+      "num_classes": 12,
+      "classes": [
+        "unknown",
+        "black",
+        "partially_gray",
+        "gray_white",
+        "brown",
+        "blonde",
+        "red",
+        "blue",
+        "green",
+        "purple",
+        "pink",
+        "multicolor"
+      ]
+    },
+    {
+      "name": "carried_objects",
+      "type": "multi_label",
+      "num_classes": 16,
+      "classes": [
+        "umbrella",
+        "phone",
+        "bottle",
+        "document",
+        "book",
+        "laptop",
+        "tablet",
+        "package",
+        "bicycle",
+        "baby_stroller",
+        "shopping_cart",
+        "skateboard",
+        "scooter",
+        "sport_racket",
+        "handheld_fan",
+        "pet"
+      ]
+    }
+  ],
+  "notes": "Where the labelling guide and the generation prompt disagree, this module follows the\nprompt, because the prompt is what produces the labels:\n\n* eyewear -- the guide's table of contents says 3 classes, its own section header says 4\n  and lists 4 (none/eyeglasses/sunglasses/unknown). The prompt lists 4. Using 4.\n* other_accessories -- the guide's table lists 9 rows, adding `brace` (vòng tay) beyond the\n  8 its own heading and table of contents claim. The prompt allows exactly 8 and omits\n  `brace`. Using 8; a label of `brace` will be rejected rather than silently dropped.\n* bag_type -- the guide lists 12 classes including `none`. The prompt allows 11 and\n  represents \"no bag\" as an empty list. Using 11, with `none` as the reserved\n  annotated-but-empty marker (MULTILABEL_NONE) rather than a class."
+}
+
+
+
+
