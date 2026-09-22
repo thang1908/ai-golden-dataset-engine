@@ -61,16 +61,21 @@ async def confidence_scoring_node(
     )
     confidence = round(max(0.0, min(1.0, confidence)), 4)
 
-    # Routing decision
-    if confidence >= threshold:
+    attributes = state.get("attributes") or PersonAttributes()
+    missing = [name for name, value in attributes.model_dump().items() if value is None]
+
+    # Incomplete labels must be reviewed even if the aggregate score is high.
+    if confidence >= threshold and not missing and not state.get("errors"):
         review_status = ReviewStatus.AUTO_ACCEPTED
     else:
         review_status = ReviewStatus.PENDING_REVIEW
 
     # Assemble the final record
-    attributes = state.get("attributes", PersonAttributes())
     caption = consensus.caption if consensus else ""
-    issues = judge_result.issues if judge_result else []
+    issues = list(judge_result.issues) if judge_result else []
+    issues.extend(state.get("errors", []))
+    if missing:
+        issues.append("Unannotated attributes: " + ", ".join(missing))
     image_id = state.get("image_id", "")
     image_path = state.get("image_path", "")
 

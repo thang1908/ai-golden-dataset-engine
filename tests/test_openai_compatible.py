@@ -13,6 +13,7 @@ from PIL import Image
 from golden_dataset_harness.models.oauth import OAuthError, OAuthTokenProvider
 from golden_dataset_harness.models.openai_compatible import OpenAICompatibleVLM, VLMServiceError
 from golden_dataset_harness.models.provider_settings import ProviderSettings
+from golden_dataset_harness.schemas.taxonomy import TAXONOMY
 
 
 def make_settings(**overrides) -> ProviderSettings:
@@ -89,7 +90,7 @@ async def test_401_refreshes_token_and_structured_attributes_are_validated():
             return httpx.Response(401, request=request, json={"error": "expired"})
         return httpx.Response(200, request=request, json={
             "choices": [{"message": {"content": json.dumps({
-                "gender": "female", "upper_color": "white",
+                "gender": "female", "upper_clothing_color": "white",
             })}}]
         })
 
@@ -99,10 +100,9 @@ async def test_401_refreshes_token_and_structured_attributes_are_validated():
     provider = OAuthTokenProvider(settings, auth_client)
     model = OpenAICompatibleVLM(settings, provider, chat_client)
     result = await model.extract_attributes(
-        jpeg_bytes(), {"gender": ["male", "female", "unknown"],
-                       "upper_color": ["white", "black", "unknown"]}
+        jpeg_bytes(), {name: TAXONOMY[name] for name in ("gender", "upper_clothing_color")}
     )
-    assert result == {"gender": "female", "upper_color": "white"}
+    assert result == {"gender": "female", "upper_clothing_color": "white"}
     assert auth_count == 2
     assert chat_requests[0].headers["authorization"] == "Bearer token-1"
     assert chat_requests[1].headers["authorization"] == "Bearer token-2"
@@ -137,7 +137,7 @@ async def test_attribute_value_outside_taxonomy_is_rejected():
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     model = OpenAICompatibleVLM(make_settings(), TokenProvider(), client)
     with pytest.raises(VLMServiceError, match="gender"):
-        await model.extract_attributes(jpeg_bytes(), {"gender": ["male", "female", "unknown"]})
+        await model.extract_attributes(jpeg_bytes(), {"gender": TAXONOMY["gender"]})
     await client.aclose()
 
 

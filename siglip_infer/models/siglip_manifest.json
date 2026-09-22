@@ -1,0 +1,106 @@
+{
+  "model": "fixed-resolution SigLIP2 ViT-B/16",
+  "model_version": "v2",
+  "base_weight_family": "ViT-B-16-SigLIP2-naflex",
+  "checkpoint": {
+    "path": "/home/dangnh58/Desktop/trained_checkpoints/epoch_35.pt",
+    "sha256": "77beb19d1edd717f668576d8f155af4af9def6354627ff241b6b464816205c11",
+    "epoch": 35
+  },
+  "attribute_head": {
+    "path": "/home/dangnh58/Desktop/epoch_35_warm_b128_K1_lr3.75e-4/checkpoints/best.pt",
+    "sha256": "6089a9fdeb041eca6020ac8e95729756070beb9654e07697408ddca42fce9ef4",
+    "source": "detached_checkpoint",
+    "epoch": 7,
+    "architecture": [
+      768,
+      512,
+      200
+    ],
+    "input": "L2-normalized embedding",
+    "multilabel_threshold": 0.2
+  },
+  "vision": {
+    "input": {
+      "name": "image",
+      "dtype": "float16",
+      "shape": [
+        "batch",
+        3,
+        384,
+        128
+      ]
+    },
+    "preprocess": {
+      "resize": [
+        384,
+        128
+      ],
+      "resize_mode": "squash",
+      "interpolation": "bicubic",
+      "mean": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "std": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "patch_grid": [
+      24,
+      8
+    ],
+    "variable_resolution": false,
+    "outputs": {
+      "embedding": [
+        "batch",
+        768
+      ],
+      "attr_logits": [
+        "batch",
+        200
+      ]
+    }
+  },
+  "text": {
+    "input": {
+      "name": "text",
+      "dtype": "int64",
+      "shape": [
+        "batch",
+        64
+      ]
+    },
+    "clean": "OpenCLIP basic_clean + canonicalize",
+    "vocab_size": 256000,
+    "output": {
+      "name": "embedding",
+      "shape": [
+        "batch",
+        768
+      ]
+    }
+  },
+  "onnx_opset": 18,
+  "artifacts": {
+    "siglip_vitb_attr.onnx": {
+      "bytes": 373690834,
+      "sha256": "03b9396ac150bfa17bc40805415f9fd0bf26d49c4606d055c6190135473c8efe"
+    },
+    "siglip_text.onnx": {
+      "bytes": 1129398112,
+      "sha256": "12e652156d5163919143a9561922c6b95f2b6464521eb55683ed9d01ce123610"
+    },
+    "siglip_tokenizer.json": {
+      "bytes": 34362884,
+      "sha256": "2b35cc56fa15e8edef437bbd3943a7bce4441d5d765d5d35b3d1770ba0d22b44"
+    },
+    "attribute_schema.json": {
+      "bytes": 7936,
+      "sha256": "8cd009a2706c9c5d4e8e34456f74df924be4ad1a611821bc66daec5f8eab12ca"
+    }
+  }
+}

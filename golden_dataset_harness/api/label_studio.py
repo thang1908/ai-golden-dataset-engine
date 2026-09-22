@@ -7,8 +7,10 @@ pre-annotations and judge feedback for efficient human review.
 from __future__ import annotations
 
 from typing import Any
+from xml.etree.ElementTree import Element, SubElement, tostring
 
 from golden_dataset_harness.schemas.annotation import AnnotationRecord
+from golden_dataset_harness.schemas.taxonomy import TAXONOMY, parse_attribute_cells
 
 
 def format_for_label_studio(
@@ -51,19 +53,18 @@ def format_for_label_studio(
                         "from_name": "caption",
                         "to_name": "image",
                     },
-                    {
-                        "id": f"attrs_{record.image_id}",
-                        "type": "choices",
-                        "value": {
-                            "choices": [
-                                f"{k}: {v}"
-                                for k, v in record.attributes.model_dump().items()
-                                if v != "unknown"
-                            ],
-                        },
-                        "from_name": "attributes",
-                        "to_name": "image",
-                    },
+                    *[
+                        {
+                            "id": f"{key}_{record.image_id}",
+                            "type": "choices",
+                            "value": {"choices": (value or ["none"])
+                                      if isinstance(value, list) else [value]},
+                            "from_name": key,
+                            "to_name": "image",
+                        }
+                        for key, value in record.attributes.model_dump().items()
+                        if value is not None
+                    ],
                 ],
                 "score": record.confidence,
             }
@@ -116,26 +117,44 @@ def parse_label_studio_export(
         result = latest.get("result", [])
 
         corrected_caption = ""
-        corrected_attrs: dict[str, str] = {}
+        corrected_attrs: dict[str, str] = dict.fromkeys(TAXONOMY, "")
 
         for item in result:
             if item.get("from_name") == "caption":
                 texts = item.get("value", {}).get("text", [])
                 if texts:
                     corrected_caption = texts[0]
-            elif item.get("from_name") == "attributes":
+            elif item.get("from_name") in TAXONOMY:
+                name = item["from_name"]
                 choices = item.get("value", {}).get("choices", [])
-                for choice in choices:
-                    if ": " in choice:
-                        k, v = choice.split(": ", 1)
-                        corrected_attrs[k] = v
+                if TAXONOMY[name]["type"] == "single_label" and len(choices) > 1:
+                    raise ValueError(f"Multiple choices for single-label attribute {name}")
+                corrected_attrs[name] = "|".join(choices)
 
         reviews.append({
             "image_id": image_id,
             "status": "human_approved",
             "corrected_caption": corrected_caption,
-            "corrected_attributes": corrected_attrs,
+            "corrected_attributes": parse_attribute_cells(corrected_attrs),
             "reviewer_notes": latest.get("lead_time", ""),
         })
 
     return reviews
+
+
+def label_studio_config() -> str:
+    """Generate controls matching the per-attribute predictions, including empty sets."""
+    root = Element("View")
+    SubElement(root, "Image", name="image", value="$image")
+    SubElement(root, "TextArea", name="caption", toName="image", editable="true")
+    for name, definition in TAXONOMY.items():
+        SubElement(root, "Header", value=definition["label"])
+        multiple = definition["type"] == "multi_label"
+        control = SubElement(root, "Choices", name=name, toName="image",
+                             choice="multiple" if multiple else "single")
+        for code in definition["classes"]:
+            SubElement(control, "Choice", value=code)
+        if multiple:
+            # Explicit negative label; a missing selection means unannotated.
+            SubElement(control, "Choice", value="none")
+    return tostring(root, encoding="unicode")

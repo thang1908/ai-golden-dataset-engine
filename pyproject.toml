@@ -46,6 +46,7 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = ["siglip_model: requires the local SigLIP ONNX model and runtime"]
 
 [tool.ruff]
 target-version = "py311"
@@ -55,5 +56,8 @@ line-length = 100
 select = ["E", "F", "I", "N", "W", "UP"]
 
 [tool.setuptools.packages.find]
-include = ["golden_dataset_harness*"]
+include = ["golden_dataset_harness*", "c1_vllm_medium*", "c2_siglip*"]
 exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+golden_dataset_harness = ["configs/*.yaml", "api/templates/*.html"]

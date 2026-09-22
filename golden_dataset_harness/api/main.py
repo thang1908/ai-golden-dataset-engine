@@ -11,14 +11,15 @@ import logging
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel
 
-from golden_dataset_harness.api.label_studio import format_for_label_studio
-from golden_dataset_harness.schemas.annotation import AnnotationRecord
+from golden_dataset_harness.api.label_studio import format_for_label_studio, label_studio_config
+from golden_dataset_harness.schemas.annotation import AnnotationRecord, PersonAttributes, ReviewStatus
+from golden_dataset_harness.schemas.taxonomy import TAXONOMY, attribute_cells
 from golden_dataset_harness.workflow.graph import build_annotation_graph, load_settings
 
 logger = logging.getLogger(__name__)
@@ -63,7 +64,9 @@ app = FastAPI(
 # ---------------------------------------------------------------------------
 
 class ReviewRequest(BaseModel):
-    status: str  # "human_approved" or "human_rejected"
+    status: Literal["human_approved", "human_rejected"]
+    corrected_caption: str | None = None
+    corrected_attributes: PersonAttributes | None = None
     notes: str = ""
 
 
@@ -86,6 +89,25 @@ async def serve_ui():
     if template_path.exists():
         return HTMLResponse(content=template_path.read_text(encoding="utf-8"))
     return HTMLResponse(content="<h1>AI Golden Dataset Harness API is running. Go to <a href='/docs'>/docs</a></h1>")
+
+
+@app.get("/taxonomy")
+async def get_taxonomy():
+    """Expose the exact attribute contract used by extraction and review."""
+    return {"schema_version": "siglip-v1", "num_attributes": len(TAXONOMY),
+            "total_classes": sum(len(v["classes"]) for v in TAXONOMY.values()),
+            "attributes": TAXONOMY}
+
+
+@app.get("/export/siglip")
+async def export_siglip():
+    """Export accepted records as SigLIP-compatible table rows."""
+    return {"schema_version": "siglip-v1", "rows": [
+        {"image_id": record.image_id, "caption": record.caption,
+         **attribute_cells(record.attributes.model_dump())}
+        for record in _state.records.values()
+        if record.review_status in {ReviewStatus.AUTO_ACCEPTED, ReviewStatus.HUMAN_APPROVED}
+    ]}
 
 
 @app.post("/annotate", response_model=AnnotationRecord)
@@ -155,6 +177,11 @@ async def list_annotations(status: str | None = Query(None)):
     return records
 
 
+@app.get("/export/label-studio/config")
+async def export_label_studio_config():
+    return Response(content=label_studio_config(), media_type="application/xml")
+
+
 @app.get("/export/label-studio")
 async def export_label_studio(
     image_base_url: str = Query("http://localhost:9000/golden-dataset-images"),
@@ -176,8 +203,14 @@ async def submit_review(image_id: str, review: ReviewRequest):
     if not record:
         raise HTTPException(status_code=404, detail=f"Annotation not found: {image_id}")
 
-    # Update in-memory record
-    record.review_status = review.status
+    # Apply only explicitly supplied fields, retaining untouched labels.
+    if review.corrected_attributes is not None:
+        merged = record.attributes.model_dump()
+        merged.update(review.corrected_attributes.model_dump(exclude_unset=True))
+        record.attributes = PersonAttributes.model_validate(merged)
+    if review.corrected_caption is not None:
+        record.caption = review.corrected_caption
+    record.review_status = ReviewStatus(review.status)
     return {"image_id": image_id, "new_status": review.status, "notes": review.notes}
 
 

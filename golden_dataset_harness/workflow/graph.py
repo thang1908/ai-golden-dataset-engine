@@ -215,8 +215,7 @@ def build_annotation_graph(settings: dict[str, Any]) -> CompiledStateGraph:
     builder.add_edge("caption_generation", "consensus")
 
     # Fan-in: consensus AND attribute_extraction → grounding_verification
-    builder.add_edge("consensus", "grounding_verification")
-    builder.add_edge("attribute_extraction", "grounding_verification")
+    builder.add_edge(["consensus", "attribute_extraction"], "grounding_verification")
 
     # Sequential: grounding → judge → confidence
     builder.add_edge("grounding_verification", "quality_judge")

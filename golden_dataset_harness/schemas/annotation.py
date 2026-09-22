@@ -9,9 +9,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, create_model, field_validator, model_validator
+
+from golden_dataset_harness.schemas.taxonomy import TAXONOMY, validate_attributes
 
 
 # ---------------------------------------------------------------------------
@@ -42,28 +44,36 @@ class ImageMetadata(BaseModel):
     )
 
 
-class PersonAttributes(BaseModel):
-    """Structured person attributes extracted from an image.
+class _AttributesBase(BaseModel):
+    """Validate exact SigLIP codes; null is an unannotated field."""
 
-    Attribute values are validated against the taxonomy loaded from
-    ``configs/attributes.yaml``. The model is intentionally permissive here
-    (``str`` fields) so that the taxonomy can be extended without code changes.
-    The attribute agent performs the taxonomy-level validation at runtime.
-    """
-    gender: str = Field(default="unknown")
-    age_group: str = Field(default="unknown")
-    upper_clothing: str = Field(default="unknown")
-    upper_color: str = Field(default="unknown")
-    lower_clothing: str = Field(default="unknown")
-    lower_color: str = Field(default="unknown")
-    bag: str = Field(default="unknown")
-    hair: str = Field(default="unknown")
-    hat: str = Field(default="unknown")
-    glasses: str = Field(default="unknown")
-    footwear: str = Field(default="unknown")
+    model_config = {"extra": "forbid", "validate_assignment": True}
 
-    # Allow taxonomy-driven extra fields without breaking the schema
-    model_config = {"extra": "allow"}
+    @model_validator(mode="before")
+    @classmethod
+    def validate_taxonomy(cls, value: Any) -> Any:
+        if isinstance(value, dict):
+            validate_attributes(value)
+        return value
+
+
+def _attribute_fields() -> dict[str, Any]:
+    fields = {}
+    for name, definition in TAXONOMY.items():
+        value_type = Literal[tuple(definition["classes"])]
+        if definition["type"] == "multi_label":
+            value_type = list[value_type]
+        fields[name] = (
+            value_type | None,
+            Field(default=None, description=definition["label"]),
+        )
+    return fields
+
+
+# Generate typed enums and array fields from the same contract used by the VLM.
+PersonAttributes = create_model(
+    "PersonAttributes", __base__=_AttributesBase, __module__=__name__, **_attribute_fields(),
+)
 
 
 class CaptionCandidate(BaseModel):
@@ -130,6 +140,7 @@ class AnnotationRecord(BaseModel):
     judge_score: float = Field(...)
 
     # Provenance
+    attribute_schema_version: Literal["siglip-v1"] = "siglip-v1"
     model_version: str
     prompt_version: str = "v1"
     review_status: ReviewStatus = ReviewStatus.PENDING_REVIEW

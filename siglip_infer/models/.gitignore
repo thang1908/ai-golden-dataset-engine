@@ -1,0 +1,5 @@
+# Model weights travel with the bundle archive, never with git.
+*.onnx
+*.onnx_data
+*.engine
+siglip_tokenizer.json

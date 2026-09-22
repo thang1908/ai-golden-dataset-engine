@@ -11,6 +11,7 @@ import hashlib
 
 from golden_dataset_harness.models.base import BaseVisionLanguageModel
 from golden_dataset_harness.schemas.annotation import GroundingResult, QualityJudgment
+from golden_dataset_harness.schemas.taxonomy import AttributeValue, Taxonomy
 
 
 # ---------------------------------------------------------------------------
@@ -28,19 +29,6 @@ _CAPTION_POOL = [
     "A woman with short hair wearing a pink top and a dark skirt.",
 ]
 
-_ATTRIBUTE_DEFAULTS: dict[str, str] = {
-    "gender": "female",
-    "age_group": "young_adult",
-    "upper_clothing": "jacket",
-    "upper_color": "black",
-    "lower_clothing": "jeans",
-    "lower_color": "blue",
-    "bag": "backpack",
-    "hair": "long_hair",
-    "hat": "none",
-    "glasses": "none",
-    "footwear": "sneakers",
-}
 
 
 class MockVLM(BaseVisionLanguageModel):
@@ -68,17 +56,19 @@ class MockVLM(BaseVisionLanguageModel):
         return _CAPTION_POOL[abs(h) % len(_CAPTION_POOL)]
 
     async def extract_attributes(
-        self, image: bytes, taxonomy: dict[str, list[str]]
-    ) -> dict[str, str]:
+        self, image: bytes, taxonomy: Taxonomy
+    ) -> dict[str, AttributeValue]:
         """Return attributes drawn from taxonomy values deterministically."""
         await asyncio.sleep(0.05)
         h = self._hash_int(image)
-        result: dict[str, str] = {}
-        for key, allowed in taxonomy.items():
-            if allowed:
-                result[key] = allowed[h % len(allowed)]
+        result: dict[str, AttributeValue] = {}
+        for index, (key, definition) in enumerate(taxonomy.items()):
+            allowed = definition["classes"]
+            selected = allowed[(h + index) % len(allowed)]
+            if definition["type"] == "multi_label":
+                result[key] = [selected] if (h + index) % 2 else []
             else:
-                result[key] = "unknown"
+                result[key] = selected
         return result
 
     async def verify_claim(self, image: bytes, claim: str) -> GroundingResult:

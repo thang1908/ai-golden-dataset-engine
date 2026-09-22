@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from golden_dataset_harness.schemas.annotation import GroundingResult, QualityJudgment
+from golden_dataset_harness.schemas.taxonomy import AttributeValue, Taxonomy
 
 
 class BaseVisionLanguageModel(ABC):
@@ -35,7 +36,7 @@ class BaseVisionLanguageModel(ABC):
         pass
 
     @abstractmethod
-    async def extract_attributes(self, image: bytes, taxonomy: dict[str, list[str]]) -> dict[str, str]:
+    async def extract_attributes(self, image: bytes, taxonomy: Taxonomy) -> dict[str, AttributeValue]:
         """Extract attributes from the image constrained to the provided taxonomy."""
         pass
 

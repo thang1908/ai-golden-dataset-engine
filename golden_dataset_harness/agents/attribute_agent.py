@@ -1,62 +1,34 @@
-"""Attribute extraction agent node.
-
-Extracts structured person attributes from an image, constrained to an
-externally-defined taxonomy loaded from YAML. Any value not in the taxonomy's
-allowed list is replaced with ``"unknown"``.
-"""
+"""Extract and validate all SigLIP person attributes without losing multi-label values."""
 
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-from typing import Any, Callable
-
-import yaml
+from collections.abc import Callable
+from typing import Any
 
 from golden_dataset_harness.models.base import BaseVisionLanguageModel
 from golden_dataset_harness.schemas.annotation import PersonAttributes
 from golden_dataset_harness.schemas.state import PipelineState
+from golden_dataset_harness.schemas.taxonomy import Taxonomy, load_taxonomy, validate_attributes
 
 logger = logging.getLogger(__name__)
 
 
-def _load_taxonomy(path: str | Path) -> dict[str, list[str]]:
-    """Load attribute taxonomy from a YAML file."""
-    with open(path) as f:
-        return yaml.safe_load(f)
-
-
-def _validate_against_taxonomy(
-    raw: dict[str, str],
-    taxonomy: dict[str, list[str]],
-) -> dict[str, str]:
-    """Replace any value not in the taxonomy's allowed list with 'unknown'."""
-    validated: dict[str, str] = {}
-    for attr, value in raw.items():
-        allowed = taxonomy.get(attr)
-        if allowed is not None and value not in allowed:
-            logger.debug(
-                "Attribute %r value %r not in taxonomy, resetting to 'unknown'",
-                attr, value,
-            )
-            validated[attr] = "unknown"
-        else:
-            validated[attr] = value
-    return validated
-
+_load_taxonomy = load_taxonomy
+_validate_against_taxonomy = validate_attributes
 
 async def attribute_extraction_node(
     state: PipelineState,
     *,
     vlm: BaseVisionLanguageModel,
-    taxonomy: dict[str, list[str]],
+    taxonomy: Taxonomy,
 ) -> dict[str, Any]:
     """Extract structured person attributes from the image.
 
     Args:
         state: Current pipeline state (must contain ``image_bytes``).
         vlm: Vision-language model for extraction.
-        taxonomy: Mapping of attribute names to their allowed values.
+        taxonomy: Attribute definitions including single/multi-label types and class codes.
 
     Returns:
         Partial state update with ``attributes`` (PersonAttributes).

@@ -285,28 +285,30 @@
 
             const attrs = data.attributes;
             const labels = {
-                gender: 'Giới tính',
-                age_group: 'Độ tuổi',
-                upper_clothing: 'Áo trên',
-                upper_color: 'Màu áo',
-                lower_clothing: 'Quần / Váy',
-                lower_color: 'Màu quần',
-                bag: 'Túi xách / Balo',
-                hair: 'Mái tóc',
-                hat: 'Mũ nón',
-                glasses: 'Kính mắt',
-                footwear: 'Giày dép'
+                age: 'Độ tuổi', gender: 'Giới tính', body_build: 'Vóc dáng',
+                upper_clothing_type: 'Loại áo', upper_clothing_color: 'Màu áo',
+                lower_clothing_type: 'Loại quần / váy', lower_clothing_color: 'Màu quần / váy',
+                clothing_style: 'Phong cách', upper_pattern: 'Họa tiết áo',
+                footwear_type: 'Giày dép', bag_type: 'Loại túi', bag_color: 'Màu túi',
+                headwear: 'Mũ / đồ đội đầu', eyewear: 'Kính mắt', face_mask: 'Khẩu trang',
+                other_accessories: 'Phụ kiện khác', hair_length: 'Độ dài tóc',
+                hair_texture: 'Chất tóc', hairstyle: 'Kiểu tóc', hair_color: 'Màu tóc',
+                carried_objects: 'Đồ mang theo'
             };
 
             for (const [key, label] of Object.entries(labels)) {
-                const val = attrs[key] || 'unknown';
-                const isUnknown = val === 'unknown' || val === 'none';
+                const val = attrs[key];
+                const isUnknown = val == null || val === 'unknown';
+                const formatCode = code => code === 'unknown' ? 'Không rõ' : code.replace(/_/g, ' ');
+                const displayValue = val == null ? 'Chưa gán nhãn'
+                    : Array.isArray(val) ? (val.length ? val.map(formatCode).join(', ') : 'Không có')
+                    : val === 'none' ? 'Không có' : formatCode(val);
                 
                 const card = document.createElement('div');
                 card.className = `p-3 rounded-xl border ${isUnknown ? 'bg-slate-50/50 border-slate-200 text-slate-400' : 'bg-indigo-50/30 border-indigo-100 text-slate-800'}`;
                 card.innerHTML = `
                     <span class="block text-[11px] font-semibold text-slate-500 mb-0.5">${label}</span>
-                    <span class="block font-bold text-sm capitalize ${isUnknown ? 'text-slate-400 italic' : 'text-indigo-950'}">${val.replace(/_/g, ' ')}</span>
+                    <span class="block font-bold text-sm capitalize ${isUnknown ? 'text-slate-400 italic' : 'text-indigo-950'}">${displayValue}</span>
                 `;
                 grid.appendChild(card);
             }

@@ -46,7 +46,7 @@ class TestSchemas:
             image_id="test_001",
             image_path="/tmp/test.jpg",
             caption="A person wearing a black jacket.",
-            attributes=PersonAttributes(gender="male", upper_color="black"),
+            attributes=PersonAttributes(gender="male", upper_clothing_color="black"),
             confidence=0.85,
             consensus_score=0.9,
             grounding_score=0.8,
@@ -76,8 +76,9 @@ class TestSchemas:
     def test_person_attributes_defaults(self):
         from golden_dataset_harness.schemas.annotation import PersonAttributes
         attrs = PersonAttributes()
-        assert attrs.gender == "unknown"
-        assert attrs.bag == "unknown"
+        assert attrs.gender is None
+        assert attrs.bag_type is None
+        assert len(attrs.model_dump()) == 21
 
 
 # ---------------------------------------------------------------------------
@@ -107,7 +108,8 @@ class TestMockVLM:
     async def test_extract_attributes(self, sample_image_bytes):
         from golden_dataset_harness.models.factory import create_vlm
         vlm = create_vlm("mock")
-        taxonomy = {"gender": ["male", "female", "unknown"], "bag": ["backpack", "none"]}
+        from golden_dataset_harness.schemas.taxonomy import TAXONOMY
+        taxonomy = TAXONOMY
         attrs = await vlm.extract_attributes(sample_image_bytes, taxonomy)
         assert "gender" in attrs
         assert attrs["gender"] in ["male", "female", "unknown"]
@@ -166,10 +168,8 @@ class TestAgents:
         from golden_dataset_harness.agents.attribute_agent import attribute_extraction_node
 
         vlm = create_vlm("mock")
-        taxonomy = {
-            "gender": ["male", "female", "unknown"],
-            "upper_color": ["black", "white", "unknown"],
-        }
+        from golden_dataset_harness.schemas.taxonomy import TAXONOMY
+        taxonomy = TAXONOMY
         state = {"image_bytes": sample_image_bytes}
         result = await attribute_extraction_node(state, vlm=vlm, taxonomy=taxonomy)
 
@@ -242,7 +242,13 @@ class TestFullPipeline:
         assert annotation.caption  # non-empty
         assert 0.0 <= annotation.confidence <= 1.0
         assert annotation.review_status in ("auto_accepted", "pending_review")
-        assert annotation.attributes is not None
+        from golden_dataset_harness.schemas.taxonomy import TAXONOMY, validate_attributes
+        values = annotation.attributes.model_dump()
+        assert list(values) == list(TAXONOMY)
+        validate_attributes(values, require_all=True)
+        assert all(v is not None for v in values.values())
+        for key in ("bag_type", "bag_color", "other_accessories", "carried_objects"):
+            assert isinstance(values[key], list)
 
         # Print for visibility
         print(f"\n{'='*60}")

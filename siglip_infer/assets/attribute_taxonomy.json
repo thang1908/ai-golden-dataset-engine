@@ -1,0 +1,3100 @@
+{
+  "taxonomy_version": 1,
+  "schema_version": 1,
+  "generated_from": {
+    "file": "attribute_schema.json",
+    "sha256": "8cd009a2706c9c5d4e8e34456f74df924be4ad1a611821bc66daec5f8eab12ca"
+  },
+  "num_attributes": 21,
+  "total_logits": 200,
+  "multilabel_threshold": 0.2,
+  "decode_rules": {
+    "single_label": "softmax over the attribute's slice, then argmax",
+    "multi_label": "independent sigmoid per class; every class at or above multilabel_threshold is selected, and an empty set is a valid answer meaning 'the model ran and found none'",
+    "unknown": "'unknown' is an answer -- the model ran and judged the attribute unclear. It is not the same as inference never having run."
+  },
+  "display_tiers": {
+    "strong": "Display prominently; safe to expose as a search facet.",
+    "moderate": "Display, confidence-gated. A positive is more informative than a negative.",
+    "weak": "Supporting detail only. Never a filter.",
+    "unvalidated": "Per-class reliability unmeasured. Display without prominence.",
+    "hidden": "Do not display or filter -- the model adds nothing over a constant."
+  },
+  "attributes": [
+    {
+      "name": "age",
+      "label": "Age",
+      "type": "single_label",
+      "display_tier": "weak",
+      "filterable": false,
+      "needs_confidence_gate": false,
+      "logit_start": 0,
+      "logit_stop": 6,
+      "num_classes": 6,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 0,
+          "code": "child",
+          "label": "Child"
+        },
+        {
+          "index": 1,
+          "logit_index": 1,
+          "code": "young_adult",
+          "label": "Young adult"
+        },
+        {
+          "index": 2,
+          "logit_index": 2,
+          "code": "adult",
+          "label": "Adult"
+        },
+        {
+          "index": 3,
+          "logit_index": 3,
+          "code": "middle_aged",
+          "label": "Middle-aged"
+        },
+        {
+          "index": 4,
+          "logit_index": 4,
+          "code": "elderly",
+          "label": "Elderly"
+        },
+        {
+          "index": 5,
+          "logit_index": 5,
+          "code": "unknown",
+          "label": "Unknown"
+        }
+      ]
+    },
+    {
+      "name": "gender",
+      "label": "Gender",
+      "type": "single_label",
+      "display_tier": "strong",
+      "filterable": true,
+      "needs_confidence_gate": true,
+      "logit_start": 6,
+      "logit_stop": 8,
+      "num_classes": 2,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 6,
+          "code": "male",
+          "label": "Male"
+        },
+        {
+          "index": 1,
+          "logit_index": 7,
+          "code": "female",
+          "label": "Female"
+        }
+      ]
+    },
+    {
+      "name": "body_build",
+      "label": "Body build",
+      "type": "single_label",
+      "display_tier": "hidden",
+      "filterable": false,
+      "needs_confidence_gate": false,
+      "logit_start": 8,
+      "logit_stop": 11,
+      "num_classes": 3,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 8,
+          "code": "heavy",
+          "label": "Heavy"
+        },
+        {
+          "index": 1,
+          "logit_index": 9,
+          "code": "average",
+          "label": "Average"
+        },
+        {
+          "index": 2,
+          "logit_index": 10,
+          "code": "slim",
+          "label": "Slim"
+        }
+      ]
+    },
+    {
+      "name": "upper_clothing_type",
+      "label": "Upper clothing type",
+      "type": "single_label",
+      "display_tier": "strong",
+      "filterable": true,
+      "needs_confidence_gate": false,
+      "logit_start": 11,
+      "logit_stop": 36,
+      "num_classes": 25,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 11,
+          "code": "tshirt_short_sleeve",
+          "label": "T-shirt (short sleeve)"
+        },
+        {
+          "index": 1,
+          "logit_index": 12,
+          "code": "tshirt_long_sleeve",
+          "label": "T-shirt (long sleeve)"
+        },
+        {
+          "index": 2,
+          "logit_index": 13,
+          "code": "sports_jersey",
+          "label": "Sports jersey"
+        },
+        {
+          "index": 3,
+          "logit_index": 14,
+          "code": "polo_short_sleeve",
+          "label": "Polo shirt (short sleeve)"
+        },
+        {
+          "index": 4,
+          "logit_index": 15,
+          "code": "polo_long_sleeve",
+          "label": "Polo shirt (long sleeve)"
+        },
+        {
+          "index": 5,
+          "logit_index": 16,
+          "code": "shirt_short_sleeve",
+          "label": "Shirt (short sleeve)"
+        },
+        {
+          "index": 6,
+          "logit_index": 17,
+          "code": "shirt_long_sleeve",
+          "label": "Shirt (long sleeve)"
+        },
+        {
+          "index": 7,
+          "logit_index": 18,
+          "code": "tank_top",
+          "label": "Tank top"
+        },
+        {
+          "index": 8,
+          "logit_index": 19,
+          "code": "sweatshirt",
+          "label": "Sweatshirt"
+        },
+        {
+          "index": 9,
+          "logit_index": 20,
+          "code": "hoodie",
+          "label": "Hoodie"
+        },
+        {
+          "index": 10,
+          "logit_index": 21,
+          "code": "sweater",
+          "label": "Sweater"
+        },
+        {
+          "index": 11,
+          "logit_index": 22,
+          "code": "cardigan",
+          "label": "Cardigan"
+        },
+        {
+          "index": 12,
+          "logit_index": 23,
+          "code": "vest",
+          "label": "Vest"
+        },
+        {
+          "index": 13,
+          "logit_index": 24,
+          "code": "blazer",
+          "label": "Blazer"
+        },
+        {
+          "index": 14,
+          "logit_index": 25,
+          "code": "jacket",
+          "label": "Jacket"
+        },
+        {
+          "index": 15,
+          "logit_index": 26,
+          "code": "windbreaker",
+          "label": "Windbreaker"
+        },
+        {
+          "index": 16,
+          "logit_index": 27,
+          "code": "coat",
+          "label": "Coat"
+        },
+        {
+          "index": 17,
+          "logit_index": 28,
+          "code": "raincoat",
+          "label": "Raincoat"
+        },
+        {
+          "index": 18,
+          "logit_index": 29,
+          "code": "uniform",
+          "label": "Uniform"
+        },
+        {
+          "index": 19,
+          "logit_index": 30,
+          "code": "traditional",
+          "label": "Traditional dress"
+        },
+        {
+          "index": 20,
+          "logit_index": 31,
+          "code": "sun_protective_jacket",
+          "label": "Sun-protective jacket"
+        },
+        {
+          "index": 21,
+          "logit_index": 32,
+          "code": "one_piece_dress",
+          "label": "One-piece dress"
+        },
+        {
+          "index": 22,
+          "logit_index": 33,
+          "code": "swimwear",
+          "label": "Swimwear"
+        },
+        {
+          "index": 23,
+          "logit_index": 34,
+          "code": "shirtless",
+          "label": "Shirtless"
+        },
+        {
+          "index": 24,
+          "logit_index": 35,
+          "code": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "name": "upper_clothing_color",
+      "label": "Upper clothing color",
+      "type": "single_label",
+      "display_tier": "strong",
+      "filterable": true,
+      "needs_confidence_gate": false,
+      "logit_start": 36,
+      "logit_stop": 51,
+      "num_classes": 15,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 36,
+          "code": "black",
+          "label": "Black"
+        },
+        {
+          "index": 1,
+          "logit_index": 37,
+          "code": "white",
+          "label": "White"
+        },
+        {
+          "index": 2,
+          "logit_index": 38,
+          "code": "gray",
+          "label": "Gray"
+        },
+        {
+          "index": 3,
+          "logit_index": 39,
+          "code": "red",
+          "label": "Red"
+        },
+        {
+          "index": 4,
+          "logit_index": 40,
+          "code": "orange",
+          "label": "Orange"
+        },
+        {
+          "index": 5,
+          "logit_index": 41,
+          "code": "yellow",
+          "label": "Yellow"
+        },
+        {
+          "index": 6,
+          "logit_index": 42,
+          "code": "green",
+          "label": "Green"
+        },
+        {
+          "index": 7,
+          "logit_index": 43,
+          "code": "teal",
+          "label": "Teal"
+        },
+        {
+          "index": 8,
+          "logit_index": 44,
+          "code": "blue",
+          "label": "Blue"
+        },
+        {
+          "index": 9,
+          "logit_index": 45,
+          "code": "purple",
+          "label": "Purple"
+        },
+        {
+          "index": 10,
+          "logit_index": 46,
+          "code": "pink",
+          "label": "Pink"
+        },
+        {
+          "index": 11,
+          "logit_index": 47,
+          "code": "brown",
+          "label": "Brown"
+        },
+        {
+          "index": 12,
+          "logit_index": 48,
+          "code": "beige_cream",
+          "label": "Beige / cream"
+        },
+        {
+          "index": 13,
+          "logit_index": 49,
+          "code": "multicolor",
+          "label": "Multicolor"
+        },
+        {
+          "index": 14,
+          "logit_index": 50,
+          "code": "unknown",
+          "label": "Unknown"
+        }
+      ]
+    },
+    {
+      "name": "lower_clothing_type",
+      "label": "Lower clothing type",
+      "type": "single_label",
+      "display_tier": "strong",
+      "filterable": true,
+      "needs_confidence_gate": false,
+      "logit_start": 51,
+      "logit_stop": 67,
+      "num_classes": 16,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 51,
+          "code": "dress_trousers",
+          "label": "Dress trousers"
+        },
+        {
+          "index": 1,
+          "logit_index": 52,
+          "code": "jeans",
+          "label": "Jeans"
+        },
+        {
+          "index": 2,
+          "logit_index": 53,
+          "code": "chinos",
+          "label": "Chinos"
+        },
+        {
+          "index": 3,
+          "logit_index": 54,
+          "code": "cargo_pants",
+          "label": "Cargo pants"
+        },
+        {
+          "index": 4,
+          "logit_index": 55,
+          "code": "sweatpants",
+          "label": "Sweatpants"
+        },
+        {
+          "index": 5,
+          "logit_index": 56,
+          "code": "legging",
+          "label": "Legging"
+        },
+        {
+          "index": 6,
+          "logit_index": 57,
+          "code": "regular_shorts",
+          "label": "Shorts (regular)"
+        },
+        {
+          "index": 7,
+          "logit_index": 58,
+          "code": "knee_length_shorts",
+          "label": "Shorts (knee-length)"
+        },
+        {
+          "index": 8,
+          "logit_index": 59,
+          "code": "tailored_shorts",
+          "label": "Shorts (tailored)"
+        },
+        {
+          "index": 9,
+          "logit_index": 60,
+          "code": "skirt_short",
+          "label": "Skirt (short)"
+        },
+        {
+          "index": 10,
+          "logit_index": 61,
+          "code": "skirt_knee_length",
+          "label": "Skirt (knee-length)"
+        },
+        {
+          "index": 11,
+          "logit_index": 62,
+          "code": "skirt_long",
+          "label": "Skirt (long)"
+        },
+        {
+          "index": 12,
+          "logit_index": 63,
+          "code": "overalls",
+          "label": "Overalls"
+        },
+        {
+          "index": 13,
+          "logit_index": 64,
+          "code": "traditional",
+          "label": "Traditional dress"
+        },
+        {
+          "index": 14,
+          "logit_index": 65,
+          "code": "swimwear",
+          "label": "Swimwear"
+        },
+        {
+          "index": 15,
+          "logit_index": 66,
+          "code": "unknown",
+          "label": "Unknown"
+        }
+      ]
+    },
+    {
+      "name": "lower_clothing_color",
+      "label": "Lower clothing color",
+      "type": "single_label",
+      "display_tier": "strong",
+      "filterable": true,
+      "needs_confidence_gate": false,
+      "logit_start": 67,
+      "logit_stop": 82,
+      "num_classes": 15,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 67,
+          "code": "black",
+          "label": "Black"
+        },
+        {
+          "index": 1,
+          "logit_index": 68,
+          "code": "white",
+          "label": "White"
+        },
+        {
+          "index": 2,
+          "logit_index": 69,
+          "code": "gray",
+          "label": "Gray"
+        },
+        {
+          "index": 3,
+          "logit_index": 70,
+          "code": "red",
+          "label": "Red"
+        },
+        {
+          "index": 4,
+          "logit_index": 71,
+          "code": "orange",
+          "label": "Orange"
+        },
+        {
+          "index": 5,
+          "logit_index": 72,
+          "code": "yellow",
+          "label": "Yellow"
+        },
+        {
+          "index": 6,
+          "logit_index": 73,
+          "code": "green",
+          "label": "Green"
+        },
+        {
+          "index": 7,
+          "logit_index": 74,
+          "code": "teal",
+          "label": "Teal"
+        },
+        {
+          "index": 8,
+          "logit_index": 75,
+          "code": "blue",
+          "label": "Blue"
+        },
+        {
+          "index": 9,
+          "logit_index": 76,
+          "code": "purple",
+          "label": "Purple"
+        },
+        {
+          "index": 10,
+          "logit_index": 77,
+          "code": "pink",
+          "label": "Pink"
+        },
+        {
+          "index": 11,
+          "logit_index": 78,
+          "code": "brown",
+          "label": "Brown"
+        },
+        {
+          "index": 12,
+          "logit_index": 79,
+          "code": "beige_cream",
+          "label": "Beige / cream"
+        },
+        {
+          "index": 13,
+          "logit_index": 80,
+          "code": "multicolor",
+          "label": "Multicolor"
+        },
+        {
+          "index": 14,
+          "logit_index": 81,
+          "code": "unknown",
+          "label": "Unknown"
+        }
+      ]
+    },
+    {
+      "name": "clothing_style",
+      "label": "Clothing style",
+      "type": "single_label",
+      "display_tier": "hidden",
+      "filterable": false,
+      "needs_confidence_gate": false,
+      "logit_start": 82,
+      "logit_stop": 87,
+      "num_classes": 5,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 82,
+          "code": "formal_style",
+          "label": "Formal style"
+        },
+        {
+          "index": 1,
+          "logit_index": 83,
+          "code": "casual_style",
+          "label": "Casual style"
+        },
+        {
+          "index": 2,
+          "logit_index": 84,
+          "code": "workwear_style",
+          "label": "Workwear style"
+        },
+        {
+          "index": 3,
+          "logit_index": 85,
+          "code": "sportswear_style",
+          "label": "Sportswear style"
+        },
+        {
+          "index": 4,
+          "logit_index": 86,
+          "code": "traditional_style",
+          "label": "Traditional style"
+        }
+      ]
+    },
+    {
+      "name": "upper_pattern",
+      "label": "Upper pattern",
+      "type": "single_label",
+      "display_tier": "moderate",
+      "filterable": true,
+      "needs_confidence_gate": true,
+      "logit_start": 87,
+      "logit_stop": 94,
+      "num_classes": 7,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 87,
+          "code": "solid",
+          "label": "Solid"
+        },
+        {
+          "index": 1,
+          "logit_index": 88,
+          "code": "striped",
+          "label": "Striped"
+        },
+        {
+          "index": 2,
+          "logit_index": 89,
+          "code": "checked",
+          "label": "Checked"
+        },
+        {
+          "index": 3,
+          "logit_index": 90,
+          "code": "floral",
+          "label": "Floral"
+        },
+        {
+          "index": 4,
+          "logit_index": 91,
+          "code": "graphic",
+          "label": "Graphic"
+        },
+        {
+          "index": 5,
+          "logit_index": 92,
+          "code": "polka_dot",
+          "label": "Polka dot"
+        },
+        {
+          "index": 6,
+          "logit_index": 93,
+          "code": "unknown",
+          "label": "Unknown"
+        }
+      ]
+    },
+    {
+      "name": "footwear_type",
+      "label": "Footwear type",
+      "type": "single_label",
+      "display_tier": "moderate",
+      "filterable": true,
+      "needs_confidence_gate": true,
+      "logit_start": 94,
+      "logit_stop": 107,
+      "num_classes": 13,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 94,
+          "code": "casual_sneakers",
+          "label": "Sneakers (casual)"
+        },
+        {
+          "index": 1,
+          "logit_index": 95,
+          "code": "athletic_shoes",
+          "label": "Athletic shoes"
+        },
+        {
+          "index": 2,
+          "logit_index": 96,
+          "code": "dress_shoes",
+          "label": "Dress shoes"
+        },
+        {
+          "index": 3,
+          "logit_index": 97,
+          "code": "loafers",
+          "label": "Loafers"
+        },
+        {
+          "index": 4,
+          "logit_index": 98,
+          "code": "boots",
+          "label": "Boots"
+        },
+        {
+          "index": 5,
+          "logit_index": 99,
+          "code": "sandals",
+          "label": "Sandals"
+        },
+        {
+          "index": 6,
+          "logit_index": 100,
+          "code": "slippers",
+          "label": "Slippers"
+        },
+        {
+          "index": 7,
+          "logit_index": 101,
+          "code": "flip_flops",
+          "label": "Flip-flops"
+        },
+        {
+          "index": 8,
+          "logit_index": 102,
+          "code": "high_heels",
+          "label": "High heels"
+        },
+        {
+          "index": 9,
+          "logit_index": 103,
+          "code": "flats",
+          "label": "Flats"
+        },
+        {
+          "index": 10,
+          "logit_index": 104,
+          "code": "roller_skates",
+          "label": "Roller skates"
+        },
+        {
+          "index": 11,
+          "logit_index": 105,
+          "code": "barefoot",
+          "label": "Barefoot"
+        },
+        {
+          "index": 12,
+          "logit_index": 106,
+          "code": "unknown",
+          "label": "Unknown"
+        }
+      ]
+    },
+    {
+      "name": "bag_type",
+      "label": "Bag type",
+      "type": "multi_label",
+      "display_tier": "unvalidated",
+      "filterable": true,
+      "needs_confidence_gate": false,
+      "logit_start": 107,
+      "logit_stop": 118,
+      "num_classes": 11,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 107,
+          "code": "backpack",
+          "label": "Backpack"
+        },
+        {
+          "index": 1,
+          "logit_index": 108,
+          "code": "handbag",
+          "label": "Handbag"
+        },
+        {
+          "index": 2,
+          "logit_index": 109,
+          "code": "crossbody_bag",
+          "label": "Crossbody bag"
+        },
+        {
+          "index": 3,
+          "logit_index": 110,
+          "code": "shoulder_bag",
+          "label": "Shoulder bag"
+        },
+        {
+          "index": 4,
+          "logit_index": 111,
+          "code": "tote_bag",
+          "label": "Tote bag"
+        },
+        {
+          "index": 5,
+          "logit_index": 112,
+          "code": "shopping_bag",
+          "label": "Shopping bag"
+        },
+        {
+          "index": 6,
+          "logit_index": 113,
+          "code": "plastic_bag",
+          "label": "Plastic bag"
+        },
+        {
+          "index": 7,
+          "logit_index": 114,
+          "code": "briefcase",
+          "label": "Briefcase"
+        },
+        {
+          "index": 8,
+          "logit_index": 115,
+          "code": "waist_bag",
+          "label": "Waist bag"
+        },
+        {
+          "index": 9,
+          "logit_index": 116,
+          "code": "duffel_bag",
+          "label": "Duffel bag"
+        },
+        {
+          "index": 10,
+          "logit_index": 117,
+          "code": "suitcase",
+          "label": "Suitcase"
+        }
+      ]
+    },
+    {
+      "name": "bag_color",
+      "label": "Bag color",
+      "type": "multi_label",
+      "display_tier": "unvalidated",
+      "filterable": true,
+      "needs_confidence_gate": false,
+      "logit_start": 118,
+      "logit_stop": 133,
+      "num_classes": 15,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 118,
+          "code": "black",
+          "label": "Black"
+        },
+        {
+          "index": 1,
+          "logit_index": 119,
+          "code": "white",
+          "label": "White"
+        },
+        {
+          "index": 2,
+          "logit_index": 120,
+          "code": "gray",
+          "label": "Gray"
+        },
+        {
+          "index": 3,
+          "logit_index": 121,
+          "code": "red",
+          "label": "Red"
+        },
+        {
+          "index": 4,
+          "logit_index": 122,
+          "code": "orange",
+          "label": "Orange"
+        },
+        {
+          "index": 5,
+          "logit_index": 123,
+          "code": "yellow",
+          "label": "Yellow"
+        },
+        {
+          "index": 6,
+          "logit_index": 124,
+          "code": "green",
+          "label": "Green"
+        },
+        {
+          "index": 7,
+          "logit_index": 125,
+          "code": "teal",
+          "label": "Teal"
+        },
+        {
+          "index": 8,
+          "logit_index": 126,
+          "code": "blue",
+          "label": "Blue"
+        },
+        {
+          "index": 9,
+          "logit_index": 127,
+          "code": "purple",
+          "label": "Purple"
+        },
+        {
+          "index": 10,
+          "logit_index": 128,
+          "code": "pink",
+          "label": "Pink"
+        },
+        {
+          "index": 11,
+          "logit_index": 129,
+          "code": "brown",
+          "label": "Brown"
+        },
+        {
+          "index": 12,
+          "logit_index": 130,
+          "code": "beige_cream",
+          "label": "Beige / cream"
+        },
+        {
+          "index": 13,
+          "logit_index": 131,
+          "code": "multicolor",
+          "label": "Multicolor"
+        },
+        {
+          "index": 14,
+          "logit_index": 132,
+          "code": "unknown",
+          "label": "Unknown"
+        }
+      ]
+    },
+    {
+      "name": "headwear",
+      "label": "Headwear",
+      "type": "single_label",
+      "display_tier": "moderate",
+      "filterable": true,
+      "needs_confidence_gate": true,
+      "logit_start": 133,
+      "logit_stop": 141,
+      "num_classes": 8,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 133,
+          "code": "none",
+          "label": "None"
+        },
+        {
+          "index": 1,
+          "logit_index": 134,
+          "code": "hood",
+          "label": "Hood"
+        },
+        {
+          "index": 2,
+          "logit_index": 135,
+          "code": "baseball_cap",
+          "label": "Baseball cap"
+        },
+        {
+          "index": 3,
+          "logit_index": 136,
+          "code": "brimmed_hat",
+          "label": "Brimmed hat"
+        },
+        {
+          "index": 4,
+          "logit_index": 137,
+          "code": "beanie",
+          "label": "Beanie"
+        },
+        {
+          "index": 5,
+          "logit_index": 138,
+          "code": "conical_hat",
+          "label": "Conical hat (nón lá)"
+        },
+        {
+          "index": 6,
+          "logit_index": 139,
+          "code": "helmet",
+          "label": "Helmet"
+        },
+        {
+          "index": 7,
+          "logit_index": 140,
+          "code": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "name": "eyewear",
+      "label": "Eyewear",
+      "type": "single_label",
+      "display_tier": "moderate",
+      "filterable": true,
+      "needs_confidence_gate": true,
+      "logit_start": 141,
+      "logit_stop": 145,
+      "num_classes": 4,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 141,
+          "code": "none",
+          "label": "None"
+        },
+        {
+          "index": 1,
+          "logit_index": 142,
+          "code": "eyeglasses",
+          "label": "Eyeglasses"
+        },
+        {
+          "index": 2,
+          "logit_index": 143,
+          "code": "sunglasses",
+          "label": "Sunglasses"
+        },
+        {
+          "index": 3,
+          "logit_index": 144,
+          "code": "unknown",
+          "label": "Unknown"
+        }
+      ]
+    },
+    {
+      "name": "face_mask",
+      "label": "Face mask",
+      "type": "single_label",
+      "display_tier": "weak",
+      "filterable": false,
+      "needs_confidence_gate": false,
+      "logit_start": 145,
+      "logit_stop": 150,
+      "num_classes": 5,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 145,
+          "code": "none",
+          "label": "None"
+        },
+        {
+          "index": 1,
+          "logit_index": 146,
+          "code": "cloth_mask",
+          "label": "Cloth mask"
+        },
+        {
+          "index": 2,
+          "logit_index": 147,
+          "code": "medical_mask",
+          "label": "Medical mask"
+        },
+        {
+          "index": 3,
+          "logit_index": 148,
+          "code": "full_face_covering",
+          "label": "Full face covering"
+        },
+        {
+          "index": 4,
+          "logit_index": 149,
+          "code": "unknown",
+          "label": "Unknown"
+        }
+      ]
+    },
+    {
+      "name": "other_accessories",
+      "label": "Other accessories",
+      "type": "multi_label",
+      "display_tier": "unvalidated",
+      "filterable": true,
+      "needs_confidence_gate": false,
+      "logit_start": 150,
+      "logit_stop": 158,
+      "num_classes": 8,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 150,
+          "code": "headscarf",
+          "label": "Headscarf"
+        },
+        {
+          "index": 1,
+          "logit_index": 151,
+          "code": "headband",
+          "label": "Headband"
+        },
+        {
+          "index": 2,
+          "logit_index": 152,
+          "code": "headphones",
+          "label": "Headphones"
+        },
+        {
+          "index": 3,
+          "logit_index": 153,
+          "code": "scarf",
+          "label": "Scarf"
+        },
+        {
+          "index": 4,
+          "logit_index": 154,
+          "code": "watch",
+          "label": "Watch"
+        },
+        {
+          "index": 5,
+          "logit_index": 155,
+          "code": "gloves",
+          "label": "Gloves"
+        },
+        {
+          "index": 6,
+          "logit_index": 156,
+          "code": "tie",
+          "label": "Tie"
+        },
+        {
+          "index": 7,
+          "logit_index": 157,
+          "code": "lanyard",
+          "label": "Lanyard"
+        }
+      ]
+    },
+    {
+      "name": "hair_length",
+      "label": "Hair length",
+      "type": "single_label",
+      "display_tier": "strong",
+      "filterable": true,
+      "needs_confidence_gate": false,
+      "logit_start": 158,
+      "logit_stop": 164,
+      "num_classes": 6,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 158,
+          "code": "unknown",
+          "label": "Unknown"
+        },
+        {
+          "index": 1,
+          "logit_index": 159,
+          "code": "shaved",
+          "label": "Shaved"
+        },
+        {
+          "index": 2,
+          "logit_index": 160,
+          "code": "balding",
+          "label": "Balding"
+        },
+        {
+          "index": 3,
+          "logit_index": 161,
+          "code": "short_hair",
+          "label": "Short hair"
+        },
+        {
+          "index": 4,
+          "logit_index": 162,
+          "code": "medium_hair",
+          "label": "Medium hair"
+        },
+        {
+          "index": 5,
+          "logit_index": 163,
+          "code": "long_hair",
+          "label": "Long hair"
+        }
+      ]
+    },
+    {
+      "name": "hair_texture",
+      "label": "Hair texture",
+      "type": "single_label",
+      "display_tier": "hidden",
+      "filterable": false,
+      "needs_confidence_gate": false,
+      "logit_start": 164,
+      "logit_stop": 167,
+      "num_classes": 3,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 164,
+          "code": "unknown",
+          "label": "Unknown"
+        },
+        {
+          "index": 1,
+          "logit_index": 165,
+          "code": "straight_hair",
+          "label": "Straight hair"
+        },
+        {
+          "index": 2,
+          "logit_index": 166,
+          "code": "curly_hair",
+          "label": "Curly hair"
+        }
+      ]
+    },
+    {
+      "name": "hairstyle",
+      "label": "Hairstyle",
+      "type": "single_label",
+      "display_tier": "strong",
+      "filterable": true,
+      "needs_confidence_gate": false,
+      "logit_start": 167,
+      "logit_stop": 172,
+      "num_classes": 5,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 167,
+          "code": "unknown",
+          "label": "Unknown"
+        },
+        {
+          "index": 1,
+          "logit_index": 168,
+          "code": "loose_hair",
+          "label": "Loose hair"
+        },
+        {
+          "index": 2,
+          "logit_index": 169,
+          "code": "ponytail",
+          "label": "Ponytail"
+        },
+        {
+          "index": 3,
+          "logit_index": 170,
+          "code": "bun",
+          "label": "Bun"
+        },
+        {
+          "index": 4,
+          "logit_index": 171,
+          "code": "braided_hair",
+          "label": "Braided hair"
+        }
+      ]
+    },
+    {
+      "name": "hair_color",
+      "label": "Hair color",
+      "type": "single_label",
+      "display_tier": "hidden",
+      "filterable": false,
+      "needs_confidence_gate": false,
+      "logit_start": 172,
+      "logit_stop": 184,
+      "num_classes": 12,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 172,
+          "code": "unknown",
+          "label": "Unknown"
+        },
+        {
+          "index": 1,
+          "logit_index": 173,
+          "code": "black",
+          "label": "Black"
+        },
+        {
+          "index": 2,
+          "logit_index": 174,
+          "code": "partially_gray",
+          "label": "Partially gray"
+        },
+        {
+          "index": 3,
+          "logit_index": 175,
+          "code": "gray_white",
+          "label": "Gray / white"
+        },
+        {
+          "index": 4,
+          "logit_index": 176,
+          "code": "brown",
+          "label": "Brown"
+        },
+        {
+          "index": 5,
+          "logit_index": 177,
+          "code": "blonde",
+          "label": "Blonde"
+        },
+        {
+          "index": 6,
+          "logit_index": 178,
+          "code": "red",
+          "label": "Red"
+        },
+        {
+          "index": 7,
+          "logit_index": 179,
+          "code": "blue",
+          "label": "Blue"
+        },
+        {
+          "index": 8,
+          "logit_index": 180,
+          "code": "green",
+          "label": "Green"
+        },
+        {
+          "index": 9,
+          "logit_index": 181,
+          "code": "purple",
+          "label": "Purple"
+        },
+        {
+          "index": 10,
+          "logit_index": 182,
+          "code": "pink",
+          "label": "Pink"
+        },
+        {
+          "index": 11,
+          "logit_index": 183,
+          "code": "multicolor",
+          "label": "Multicolor"
+        }
+      ]
+    },
+    {
+      "name": "carried_objects",
+      "label": "Carried objects",
+      "type": "multi_label",
+      "display_tier": "unvalidated",
+      "filterable": true,
+      "needs_confidence_gate": false,
+      "logit_start": 184,
+      "logit_stop": 200,
+      "num_classes": 16,
+      "classes": [
+        {
+          "index": 0,
+          "logit_index": 184,
+          "code": "umbrella",
+          "label": "Umbrella"
+        },
+        {
+          "index": 1,
+          "logit_index": 185,
+          "code": "phone",
+          "label": "Phone"
+        },
+        {
+          "index": 2,
+          "logit_index": 186,
+          "code": "bottle",
+          "label": "Bottle"
+        },
+        {
+          "index": 3,
+          "logit_index": 187,
+          "code": "document",
+          "label": "Document"
+        },
+        {
+          "index": 4,
+          "logit_index": 188,
+          "code": "book",
+          "label": "Book"
+        },
+        {
+          "index": 5,
+          "logit_index": 189,
+          "code": "laptop",
+          "label": "Laptop"
+        },
+        {
+          "index": 6,
+          "logit_index": 190,
+          "code": "tablet",
+          "label": "Tablet"
+        },
+        {
+          "index": 7,
+          "logit_index": 191,
+          "code": "package",
+          "label": "Package"
+        },
+        {
+          "index": 8,
+          "logit_index": 192,
+          "code": "bicycle",
+          "label": "Bicycle"
+        },
+        {
+          "index": 9,
+          "logit_index": 193,
+          "code": "baby_stroller",
+          "label": "Baby stroller"
+        },
+        {
+          "index": 10,
+          "logit_index": 194,
+          "code": "shopping_cart",
+          "label": "Shopping cart"
+        },
+        {
+          "index": 11,
+          "logit_index": 195,
+          "code": "skateboard",
+          "label": "Skateboard"
+        },
+        {
+          "index": 12,
+          "logit_index": 196,
+          "code": "scooter",
+          "label": "Scooter"
+        },
+        {
+          "index": 13,
+          "logit_index": 197,
+          "code": "sport_racket",
+          "label": "Sport racket"
+        },
+        {
+          "index": 14,
+          "logit_index": 198,
+          "code": "handheld_fan",
+          "label": "Handheld fan"
+        },
+        {
+          "index": 15,
+          "logit_index": 199,
+          "code": "pet",
+          "label": "Pet"
+        }
+      ]
+    }
+  ],
+  "index_to_class": [
+    {
+      "logit_index": 0,
+      "attribute": "age",
+      "attribute_label": "Age",
+      "class_index": 0,
+      "class_code": "child",
+      "class_label": "Child"
+    },
+    {
+      "logit_index": 1,
+      "attribute": "age",
+      "attribute_label": "Age",
+      "class_index": 1,
+      "class_code": "young_adult",
+      "class_label": "Young adult"
+    },
+    {
+      "logit_index": 2,
+      "attribute": "age",
+      "attribute_label": "Age",
+      "class_index": 2,
+      "class_code": "adult",
+      "class_label": "Adult"
+    },
+    {
+      "logit_index": 3,
+      "attribute": "age",
+      "attribute_label": "Age",
+      "class_index": 3,
+      "class_code": "middle_aged",
+      "class_label": "Middle-aged"
+    },
+    {
+      "logit_index": 4,
+      "attribute": "age",
+      "attribute_label": "Age",
+      "class_index": 4,
+      "class_code": "elderly",
+      "class_label": "Elderly"
+    },
+    {
+      "logit_index": 5,
+      "attribute": "age",
+      "attribute_label": "Age",
+      "class_index": 5,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 6,
+      "attribute": "gender",
+      "attribute_label": "Gender",
+      "class_index": 0,
+      "class_code": "male",
+      "class_label": "Male"
+    },
+    {
+      "logit_index": 7,
+      "attribute": "gender",
+      "attribute_label": "Gender",
+      "class_index": 1,
+      "class_code": "female",
+      "class_label": "Female"
+    },
+    {
+      "logit_index": 8,
+      "attribute": "body_build",
+      "attribute_label": "Body build",
+      "class_index": 0,
+      "class_code": "heavy",
+      "class_label": "Heavy"
+    },
+    {
+      "logit_index": 9,
+      "attribute": "body_build",
+      "attribute_label": "Body build",
+      "class_index": 1,
+      "class_code": "average",
+      "class_label": "Average"
+    },
+    {
+      "logit_index": 10,
+      "attribute": "body_build",
+      "attribute_label": "Body build",
+      "class_index": 2,
+      "class_code": "slim",
+      "class_label": "Slim"
+    },
+    {
+      "logit_index": 11,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 0,
+      "class_code": "tshirt_short_sleeve",
+      "class_label": "T-shirt (short sleeve)"
+    },
+    {
+      "logit_index": 12,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 1,
+      "class_code": "tshirt_long_sleeve",
+      "class_label": "T-shirt (long sleeve)"
+    },
+    {
+      "logit_index": 13,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 2,
+      "class_code": "sports_jersey",
+      "class_label": "Sports jersey"
+    },
+    {
+      "logit_index": 14,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 3,
+      "class_code": "polo_short_sleeve",
+      "class_label": "Polo shirt (short sleeve)"
+    },
+    {
+      "logit_index": 15,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 4,
+      "class_code": "polo_long_sleeve",
+      "class_label": "Polo shirt (long sleeve)"
+    },
+    {
+      "logit_index": 16,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 5,
+      "class_code": "shirt_short_sleeve",
+      "class_label": "Shirt (short sleeve)"
+    },
+    {
+      "logit_index": 17,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 6,
+      "class_code": "shirt_long_sleeve",
+      "class_label": "Shirt (long sleeve)"
+    },
+    {
+      "logit_index": 18,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 7,
+      "class_code": "tank_top",
+      "class_label": "Tank top"
+    },
+    {
+      "logit_index": 19,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 8,
+      "class_code": "sweatshirt",
+      "class_label": "Sweatshirt"
+    },
+    {
+      "logit_index": 20,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 9,
+      "class_code": "hoodie",
+      "class_label": "Hoodie"
+    },
+    {
+      "logit_index": 21,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 10,
+      "class_code": "sweater",
+      "class_label": "Sweater"
+    },
+    {
+      "logit_index": 22,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 11,
+      "class_code": "cardigan",
+      "class_label": "Cardigan"
+    },
+    {
+      "logit_index": 23,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 12,
+      "class_code": "vest",
+      "class_label": "Vest"
+    },
+    {
+      "logit_index": 24,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 13,
+      "class_code": "blazer",
+      "class_label": "Blazer"
+    },
+    {
+      "logit_index": 25,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 14,
+      "class_code": "jacket",
+      "class_label": "Jacket"
+    },
+    {
+      "logit_index": 26,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 15,
+      "class_code": "windbreaker",
+      "class_label": "Windbreaker"
+    },
+    {
+      "logit_index": 27,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 16,
+      "class_code": "coat",
+      "class_label": "Coat"
+    },
+    {
+      "logit_index": 28,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 17,
+      "class_code": "raincoat",
+      "class_label": "Raincoat"
+    },
+    {
+      "logit_index": 29,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 18,
+      "class_code": "uniform",
+      "class_label": "Uniform"
+    },
+    {
+      "logit_index": 30,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 19,
+      "class_code": "traditional",
+      "class_label": "Traditional dress"
+    },
+    {
+      "logit_index": 31,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 20,
+      "class_code": "sun_protective_jacket",
+      "class_label": "Sun-protective jacket"
+    },
+    {
+      "logit_index": 32,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 21,
+      "class_code": "one_piece_dress",
+      "class_label": "One-piece dress"
+    },
+    {
+      "logit_index": 33,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 22,
+      "class_code": "swimwear",
+      "class_label": "Swimwear"
+    },
+    {
+      "logit_index": 34,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 23,
+      "class_code": "shirtless",
+      "class_label": "Shirtless"
+    },
+    {
+      "logit_index": 35,
+      "attribute": "upper_clothing_type",
+      "attribute_label": "Upper clothing type",
+      "class_index": 24,
+      "class_code": "other",
+      "class_label": "Other"
+    },
+    {
+      "logit_index": 36,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 0,
+      "class_code": "black",
+      "class_label": "Black"
+    },
+    {
+      "logit_index": 37,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 1,
+      "class_code": "white",
+      "class_label": "White"
+    },
+    {
+      "logit_index": 38,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 2,
+      "class_code": "gray",
+      "class_label": "Gray"
+    },
+    {
+      "logit_index": 39,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 3,
+      "class_code": "red",
+      "class_label": "Red"
+    },
+    {
+      "logit_index": 40,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 4,
+      "class_code": "orange",
+      "class_label": "Orange"
+    },
+    {
+      "logit_index": 41,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 5,
+      "class_code": "yellow",
+      "class_label": "Yellow"
+    },
+    {
+      "logit_index": 42,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 6,
+      "class_code": "green",
+      "class_label": "Green"
+    },
+    {
+      "logit_index": 43,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 7,
+      "class_code": "teal",
+      "class_label": "Teal"
+    },
+    {
+      "logit_index": 44,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 8,
+      "class_code": "blue",
+      "class_label": "Blue"
+    },
+    {
+      "logit_index": 45,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 9,
+      "class_code": "purple",
+      "class_label": "Purple"
+    },
+    {
+      "logit_index": 46,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 10,
+      "class_code": "pink",
+      "class_label": "Pink"
+    },
+    {
+      "logit_index": 47,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 11,
+      "class_code": "brown",
+      "class_label": "Brown"
+    },
+    {
+      "logit_index": 48,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 12,
+      "class_code": "beige_cream",
+      "class_label": "Beige / cream"
+    },
+    {
+      "logit_index": 49,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 13,
+      "class_code": "multicolor",
+      "class_label": "Multicolor"
+    },
+    {
+      "logit_index": 50,
+      "attribute": "upper_clothing_color",
+      "attribute_label": "Upper clothing color",
+      "class_index": 14,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 51,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 0,
+      "class_code": "dress_trousers",
+      "class_label": "Dress trousers"
+    },
+    {
+      "logit_index": 52,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 1,
+      "class_code": "jeans",
+      "class_label": "Jeans"
+    },
+    {
+      "logit_index": 53,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 2,
+      "class_code": "chinos",
+      "class_label": "Chinos"
+    },
+    {
+      "logit_index": 54,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 3,
+      "class_code": "cargo_pants",
+      "class_label": "Cargo pants"
+    },
+    {
+      "logit_index": 55,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 4,
+      "class_code": "sweatpants",
+      "class_label": "Sweatpants"
+    },
+    {
+      "logit_index": 56,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 5,
+      "class_code": "legging",
+      "class_label": "Legging"
+    },
+    {
+      "logit_index": 57,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 6,
+      "class_code": "regular_shorts",
+      "class_label": "Shorts (regular)"
+    },
+    {
+      "logit_index": 58,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 7,
+      "class_code": "knee_length_shorts",
+      "class_label": "Shorts (knee-length)"
+    },
+    {
+      "logit_index": 59,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 8,
+      "class_code": "tailored_shorts",
+      "class_label": "Shorts (tailored)"
+    },
+    {
+      "logit_index": 60,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 9,
+      "class_code": "skirt_short",
+      "class_label": "Skirt (short)"
+    },
+    {
+      "logit_index": 61,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 10,
+      "class_code": "skirt_knee_length",
+      "class_label": "Skirt (knee-length)"
+    },
+    {
+      "logit_index": 62,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 11,
+      "class_code": "skirt_long",
+      "class_label": "Skirt (long)"
+    },
+    {
+      "logit_index": 63,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 12,
+      "class_code": "overalls",
+      "class_label": "Overalls"
+    },
+    {
+      "logit_index": 64,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 13,
+      "class_code": "traditional",
+      "class_label": "Traditional dress"
+    },
+    {
+      "logit_index": 65,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 14,
+      "class_code": "swimwear",
+      "class_label": "Swimwear"
+    },
+    {
+      "logit_index": 66,
+      "attribute": "lower_clothing_type",
+      "attribute_label": "Lower clothing type",
+      "class_index": 15,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 67,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 0,
+      "class_code": "black",
+      "class_label": "Black"
+    },
+    {
+      "logit_index": 68,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 1,
+      "class_code": "white",
+      "class_label": "White"
+    },
+    {
+      "logit_index": 69,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 2,
+      "class_code": "gray",
+      "class_label": "Gray"
+    },
+    {
+      "logit_index": 70,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 3,
+      "class_code": "red",
+      "class_label": "Red"
+    },
+    {
+      "logit_index": 71,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 4,
+      "class_code": "orange",
+      "class_label": "Orange"
+    },
+    {
+      "logit_index": 72,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 5,
+      "class_code": "yellow",
+      "class_label": "Yellow"
+    },
+    {
+      "logit_index": 73,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 6,
+      "class_code": "green",
+      "class_label": "Green"
+    },
+    {
+      "logit_index": 74,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 7,
+      "class_code": "teal",
+      "class_label": "Teal"
+    },
+    {
+      "logit_index": 75,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 8,
+      "class_code": "blue",
+      "class_label": "Blue"
+    },
+    {
+      "logit_index": 76,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 9,
+      "class_code": "purple",
+      "class_label": "Purple"
+    },
+    {
+      "logit_index": 77,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 10,
+      "class_code": "pink",
+      "class_label": "Pink"
+    },
+    {
+      "logit_index": 78,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 11,
+      "class_code": "brown",
+      "class_label": "Brown"
+    },
+    {
+      "logit_index": 79,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 12,
+      "class_code": "beige_cream",
+      "class_label": "Beige / cream"
+    },
+    {
+      "logit_index": 80,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 13,
+      "class_code": "multicolor",
+      "class_label": "Multicolor"
+    },
+    {
+      "logit_index": 81,
+      "attribute": "lower_clothing_color",
+      "attribute_label": "Lower clothing color",
+      "class_index": 14,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 82,
+      "attribute": "clothing_style",
+      "attribute_label": "Clothing style",
+      "class_index": 0,
+      "class_code": "formal_style",
+      "class_label": "Formal style"
+    },
+    {
+      "logit_index": 83,
+      "attribute": "clothing_style",
+      "attribute_label": "Clothing style",
+      "class_index": 1,
+      "class_code": "casual_style",
+      "class_label": "Casual style"
+    },
+    {
+      "logit_index": 84,
+      "attribute": "clothing_style",
+      "attribute_label": "Clothing style",
+      "class_index": 2,
+      "class_code": "workwear_style",
+      "class_label": "Workwear style"
+    },
+    {
+      "logit_index": 85,
+      "attribute": "clothing_style",
+      "attribute_label": "Clothing style",
+      "class_index": 3,
+      "class_code": "sportswear_style",
+      "class_label": "Sportswear style"
+    },
+    {
+      "logit_index": 86,
+      "attribute": "clothing_style",
+      "attribute_label": "Clothing style",
+      "class_index": 4,
+      "class_code": "traditional_style",
+      "class_label": "Traditional style"
+    },
+    {
+      "logit_index": 87,
+      "attribute": "upper_pattern",
+      "attribute_label": "Upper pattern",
+      "class_index": 0,
+      "class_code": "solid",
+      "class_label": "Solid"
+    },
+    {
+      "logit_index": 88,
+      "attribute": "upper_pattern",
+      "attribute_label": "Upper pattern",
+      "class_index": 1,
+      "class_code": "striped",
+      "class_label": "Striped"
+    },
+    {
+      "logit_index": 89,
+      "attribute": "upper_pattern",
+      "attribute_label": "Upper pattern",
+      "class_index": 2,
+      "class_code": "checked",
+      "class_label": "Checked"
+    },
+    {
+      "logit_index": 90,
+      "attribute": "upper_pattern",
+      "attribute_label": "Upper pattern",
+      "class_index": 3,
+      "class_code": "floral",
+      "class_label": "Floral"
+    },
+    {
+      "logit_index": 91,
+      "attribute": "upper_pattern",
+      "attribute_label": "Upper pattern",
+      "class_index": 4,
+      "class_code": "graphic",
+      "class_label": "Graphic"
+    },
+    {
+      "logit_index": 92,
+      "attribute": "upper_pattern",
+      "attribute_label": "Upper pattern",
+      "class_index": 5,
+      "class_code": "polka_dot",
+      "class_label": "Polka dot"
+    },
+    {
+      "logit_index": 93,
+      "attribute": "upper_pattern",
+      "attribute_label": "Upper pattern",
+      "class_index": 6,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 94,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 0,
+      "class_code": "casual_sneakers",
+      "class_label": "Sneakers (casual)"
+    },
+    {
+      "logit_index": 95,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 1,
+      "class_code": "athletic_shoes",
+      "class_label": "Athletic shoes"
+    },
+    {
+      "logit_index": 96,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 2,
+      "class_code": "dress_shoes",
+      "class_label": "Dress shoes"
+    },
+    {
+      "logit_index": 97,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 3,
+      "class_code": "loafers",
+      "class_label": "Loafers"
+    },
+    {
+      "logit_index": 98,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 4,
+      "class_code": "boots",
+      "class_label": "Boots"
+    },
+    {
+      "logit_index": 99,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 5,
+      "class_code": "sandals",
+      "class_label": "Sandals"
+    },
+    {
+      "logit_index": 100,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 6,
+      "class_code": "slippers",
+      "class_label": "Slippers"
+    },
+    {
+      "logit_index": 101,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 7,
+      "class_code": "flip_flops",
+      "class_label": "Flip-flops"
+    },
+    {
+      "logit_index": 102,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 8,
+      "class_code": "high_heels",
+      "class_label": "High heels"
+    },
+    {
+      "logit_index": 103,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 9,
+      "class_code": "flats",
+      "class_label": "Flats"
+    },
+    {
+      "logit_index": 104,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 10,
+      "class_code": "roller_skates",
+      "class_label": "Roller skates"
+    },
+    {
+      "logit_index": 105,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 11,
+      "class_code": "barefoot",
+      "class_label": "Barefoot"
+    },
+    {
+      "logit_index": 106,
+      "attribute": "footwear_type",
+      "attribute_label": "Footwear type",
+      "class_index": 12,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 107,
+      "attribute": "bag_type",
+      "attribute_label": "Bag type",
+      "class_index": 0,
+      "class_code": "backpack",
+      "class_label": "Backpack"
+    },
+    {
+      "logit_index": 108,
+      "attribute": "bag_type",
+      "attribute_label": "Bag type",
+      "class_index": 1,
+      "class_code": "handbag",
+      "class_label": "Handbag"
+    },
+    {
+      "logit_index": 109,
+      "attribute": "bag_type",
+      "attribute_label": "Bag type",
+      "class_index": 2,
+      "class_code": "crossbody_bag",
+      "class_label": "Crossbody bag"
+    },
+    {
+      "logit_index": 110,
+      "attribute": "bag_type",
+      "attribute_label": "Bag type",
+      "class_index": 3,
+      "class_code": "shoulder_bag",
+      "class_label": "Shoulder bag"
+    },
+    {
+      "logit_index": 111,
+      "attribute": "bag_type",
+      "attribute_label": "Bag type",
+      "class_index": 4,
+      "class_code": "tote_bag",
+      "class_label": "Tote bag"
+    },
+    {
+      "logit_index": 112,
+      "attribute": "bag_type",
+      "attribute_label": "Bag type",
+      "class_index": 5,
+      "class_code": "shopping_bag",
+      "class_label": "Shopping bag"
+    },
+    {
+      "logit_index": 113,
+      "attribute": "bag_type",
+      "attribute_label": "Bag type",
+      "class_index": 6,
+      "class_code": "plastic_bag",
+      "class_label": "Plastic bag"
+    },
+    {
+      "logit_index": 114,
+      "attribute": "bag_type",
+      "attribute_label": "Bag type",
+      "class_index": 7,
+      "class_code": "briefcase",
+      "class_label": "Briefcase"
+    },
+    {
+      "logit_index": 115,
+      "attribute": "bag_type",
+      "attribute_label": "Bag type",
+      "class_index": 8,
+      "class_code": "waist_bag",
+      "class_label": "Waist bag"
+    },
+    {
+      "logit_index": 116,
+      "attribute": "bag_type",
+      "attribute_label": "Bag type",
+      "class_index": 9,
+      "class_code": "duffel_bag",
+      "class_label": "Duffel bag"
+    },
+    {
+      "logit_index": 117,
+      "attribute": "bag_type",
+      "attribute_label": "Bag type",
+      "class_index": 10,
+      "class_code": "suitcase",
+      "class_label": "Suitcase"
+    },
+    {
+      "logit_index": 118,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 0,
+      "class_code": "black",
+      "class_label": "Black"
+    },
+    {
+      "logit_index": 119,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 1,
+      "class_code": "white",
+      "class_label": "White"
+    },
+    {
+      "logit_index": 120,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 2,
+      "class_code": "gray",
+      "class_label": "Gray"
+    },
+    {
+      "logit_index": 121,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 3,
+      "class_code": "red",
+      "class_label": "Red"
+    },
+    {
+      "logit_index": 122,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 4,
+      "class_code": "orange",
+      "class_label": "Orange"
+    },
+    {
+      "logit_index": 123,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 5,
+      "class_code": "yellow",
+      "class_label": "Yellow"
+    },
+    {
+      "logit_index": 124,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 6,
+      "class_code": "green",
+      "class_label": "Green"
+    },
+    {
+      "logit_index": 125,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 7,
+      "class_code": "teal",
+      "class_label": "Teal"
+    },
+    {
+      "logit_index": 126,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 8,
+      "class_code": "blue",
+      "class_label": "Blue"
+    },
+    {
+      "logit_index": 127,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 9,
+      "class_code": "purple",
+      "class_label": "Purple"
+    },
+    {
+      "logit_index": 128,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 10,
+      "class_code": "pink",
+      "class_label": "Pink"
+    },
+    {
+      "logit_index": 129,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 11,
+      "class_code": "brown",
+      "class_label": "Brown"
+    },
+    {
+      "logit_index": 130,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 12,
+      "class_code": "beige_cream",
+      "class_label": "Beige / cream"
+    },
+    {
+      "logit_index": 131,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 13,
+      "class_code": "multicolor",
+      "class_label": "Multicolor"
+    },
+    {
+      "logit_index": 132,
+      "attribute": "bag_color",
+      "attribute_label": "Bag color",
+      "class_index": 14,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 133,
+      "attribute": "headwear",
+      "attribute_label": "Headwear",
+      "class_index": 0,
+      "class_code": "none",
+      "class_label": "None"
+    },
+    {
+      "logit_index": 134,
+      "attribute": "headwear",
+      "attribute_label": "Headwear",
+      "class_index": 1,
+      "class_code": "hood",
+      "class_label": "Hood"
+    },
+    {
+      "logit_index": 135,
+      "attribute": "headwear",
+      "attribute_label": "Headwear",
+      "class_index": 2,
+      "class_code": "baseball_cap",
+      "class_label": "Baseball cap"
+    },
+    {
+      "logit_index": 136,
+      "attribute": "headwear",
+      "attribute_label": "Headwear",
+      "class_index": 3,
+      "class_code": "brimmed_hat",
+      "class_label": "Brimmed hat"
+    },
+    {
+      "logit_index": 137,
+      "attribute": "headwear",
+      "attribute_label": "Headwear",
+      "class_index": 4,
+      "class_code": "beanie",
+      "class_label": "Beanie"
+    },
+    {
+      "logit_index": 138,
+      "attribute": "headwear",
+      "attribute_label": "Headwear",
+      "class_index": 5,
+      "class_code": "conical_hat",
+      "class_label": "Conical hat (nón lá)"
+    },
+    {
+      "logit_index": 139,
+      "attribute": "headwear",
+      "attribute_label": "Headwear",
+      "class_index": 6,
+      "class_code": "helmet",
+      "class_label": "Helmet"
+    },
+    {
+      "logit_index": 140,
+      "attribute": "headwear",
+      "attribute_label": "Headwear",
+      "class_index": 7,
+      "class_code": "other",
+      "class_label": "Other"
+    },
+    {
+      "logit_index": 141,
+      "attribute": "eyewear",
+      "attribute_label": "Eyewear",
+      "class_index": 0,
+      "class_code": "none",
+      "class_label": "None"
+    },
+    {
+      "logit_index": 142,
+      "attribute": "eyewear",
+      "attribute_label": "Eyewear",
+      "class_index": 1,
+      "class_code": "eyeglasses",
+      "class_label": "Eyeglasses"
+    },
+    {
+      "logit_index": 143,
+      "attribute": "eyewear",
+      "attribute_label": "Eyewear",
+      "class_index": 2,
+      "class_code": "sunglasses",
+      "class_label": "Sunglasses"
+    },
+    {
+      "logit_index": 144,
+      "attribute": "eyewear",
+      "attribute_label": "Eyewear",
+      "class_index": 3,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 145,
+      "attribute": "face_mask",
+      "attribute_label": "Face mask",
+      "class_index": 0,
+      "class_code": "none",
+      "class_label": "None"
+    },
+    {
+      "logit_index": 146,
+      "attribute": "face_mask",
+      "attribute_label": "Face mask",
+      "class_index": 1,
+      "class_code": "cloth_mask",
+      "class_label": "Cloth mask"
+    },
+    {
+      "logit_index": 147,
+      "attribute": "face_mask",
+      "attribute_label": "Face mask",
+      "class_index": 2,
+      "class_code": "medical_mask",
+      "class_label": "Medical mask"
+    },
+    {
+      "logit_index": 148,
+      "attribute": "face_mask",
+      "attribute_label": "Face mask",
+      "class_index": 3,
+      "class_code": "full_face_covering",
+      "class_label": "Full face covering"
+    },
+    {
+      "logit_index": 149,
+      "attribute": "face_mask",
+      "attribute_label": "Face mask",
+      "class_index": 4,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 150,
+      "attribute": "other_accessories",
+      "attribute_label": "Other accessories",
+      "class_index": 0,
+      "class_code": "headscarf",
+      "class_label": "Headscarf"
+    },
+    {
+      "logit_index": 151,
+      "attribute": "other_accessories",
+      "attribute_label": "Other accessories",
+      "class_index": 1,
+      "class_code": "headband",
+      "class_label": "Headband"
+    },
+    {
+      "logit_index": 152,
+      "attribute": "other_accessories",
+      "attribute_label": "Other accessories",
+      "class_index": 2,
+      "class_code": "headphones",
+      "class_label": "Headphones"
+    },
+    {
+      "logit_index": 153,
+      "attribute": "other_accessories",
+      "attribute_label": "Other accessories",
+      "class_index": 3,
+      "class_code": "scarf",
+      "class_label": "Scarf"
+    },
+    {
+      "logit_index": 154,
+      "attribute": "other_accessories",
+      "attribute_label": "Other accessories",
+      "class_index": 4,
+      "class_code": "watch",
+      "class_label": "Watch"
+    },
+    {
+      "logit_index": 155,
+      "attribute": "other_accessories",
+      "attribute_label": "Other accessories",
+      "class_index": 5,
+      "class_code": "gloves",
+      "class_label": "Gloves"
+    },
+    {
+      "logit_index": 156,
+      "attribute": "other_accessories",
+      "attribute_label": "Other accessories",
+      "class_index": 6,
+      "class_code": "tie",
+      "class_label": "Tie"
+    },
+    {
+      "logit_index": 157,
+      "attribute": "other_accessories",
+      "attribute_label": "Other accessories",
+      "class_index": 7,
+      "class_code": "lanyard",
+      "class_label": "Lanyard"
+    },
+    {
+      "logit_index": 158,
+      "attribute": "hair_length",
+      "attribute_label": "Hair length",
+      "class_index": 0,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 159,
+      "attribute": "hair_length",
+      "attribute_label": "Hair length",
+      "class_index": 1,
+      "class_code": "shaved",
+      "class_label": "Shaved"
+    },
+    {
+      "logit_index": 160,
+      "attribute": "hair_length",
+      "attribute_label": "Hair length",
+      "class_index": 2,
+      "class_code": "balding",
+      "class_label": "Balding"
+    },
+    {
+      "logit_index": 161,
+      "attribute": "hair_length",
+      "attribute_label": "Hair length",
+      "class_index": 3,
+      "class_code": "short_hair",
+      "class_label": "Short hair"
+    },
+    {
+      "logit_index": 162,
+      "attribute": "hair_length",
+      "attribute_label": "Hair length",
+      "class_index": 4,
+      "class_code": "medium_hair",
+      "class_label": "Medium hair"
+    },
+    {
+      "logit_index": 163,
+      "attribute": "hair_length",
+      "attribute_label": "Hair length",
+      "class_index": 5,
+      "class_code": "long_hair",
+      "class_label": "Long hair"
+    },
+    {
+      "logit_index": 164,
+      "attribute": "hair_texture",
+      "attribute_label": "Hair texture",
+      "class_index": 0,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 165,
+      "attribute": "hair_texture",
+      "attribute_label": "Hair texture",
+      "class_index": 1,
+      "class_code": "straight_hair",
+      "class_label": "Straight hair"
+    },
+    {
+      "logit_index": 166,
+      "attribute": "hair_texture",
+      "attribute_label": "Hair texture",
+      "class_index": 2,
+      "class_code": "curly_hair",
+      "class_label": "Curly hair"
+    },
+    {
+      "logit_index": 167,
+      "attribute": "hairstyle",
+      "attribute_label": "Hairstyle",
+      "class_index": 0,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 168,
+      "attribute": "hairstyle",
+      "attribute_label": "Hairstyle",
+      "class_index": 1,
+      "class_code": "loose_hair",
+      "class_label": "Loose hair"
+    },
+    {
+      "logit_index": 169,
+      "attribute": "hairstyle",
+      "attribute_label": "Hairstyle",
+      "class_index": 2,
+      "class_code": "ponytail",
+      "class_label": "Ponytail"
+    },
+    {
+      "logit_index": 170,
+      "attribute": "hairstyle",
+      "attribute_label": "Hairstyle",
+      "class_index": 3,
+      "class_code": "bun",
+      "class_label": "Bun"
+    },
+    {
+      "logit_index": 171,
+      "attribute": "hairstyle",
+      "attribute_label": "Hairstyle",
+      "class_index": 4,
+      "class_code": "braided_hair",
+      "class_label": "Braided hair"
+    },
+    {
+      "logit_index": 172,
+      "attribute": "hair_color",
+      "attribute_label": "Hair color",
+      "class_index": 0,
+      "class_code": "unknown",
+      "class_label": "Unknown"
+    },
+    {
+      "logit_index": 173,
+      "attribute": "hair_color",
+      "attribute_label": "Hair color",
+      "class_index": 1,
+      "class_code": "black",
+      "class_label": "Black"
+    },
+    {
+      "logit_index": 174,
+      "attribute": "hair_color",
+      "attribute_label": "Hair color",
+      "class_index": 2,
+      "class_code": "partially_gray",
+      "class_label": "Partially gray"
+    },
+    {
+      "logit_index": 175,
+      "attribute": "hair_color",
+      "attribute_label": "Hair color",
+      "class_index": 3,
+      "class_code": "gray_white",
+      "class_label": "Gray / white"
+    },
+    {
+      "logit_index": 176,
+      "attribute": "hair_color",
+      "attribute_label": "Hair color",
+      "class_index": 4,
+      "class_code": "brown",
+      "class_label": "Brown"
+    },
+    {
+      "logit_index": 177,
+      "attribute": "hair_color",
+      "attribute_label": "Hair color",
+      "class_index": 5,
+      "class_code": "blonde",
+      "class_label": "Blonde"
+    },
+    {
+      "logit_index": 178,
+      "attribute": "hair_color",
+      "attribute_label": "Hair color",
+      "class_index": 6,
+      "class_code": "red",
+      "class_label": "Red"
+    },
+    {
+      "logit_index": 179,
+      "attribute": "hair_color",
+      "attribute_label": "Hair color",
+      "class_index": 7,
+      "class_code": "blue",
+      "class_label": "Blue"
+    },
+    {
+      "logit_index": 180,
+      "attribute": "hair_color",
+      "attribute_label": "Hair color",
+      "class_index": 8,
+      "class_code": "green",
+      "class_label": "Green"
+    },
+    {
+      "logit_index": 181,
+      "attribute": "hair_color",
+      "attribute_label": "Hair color",
+      "class_index": 9,
+      "class_code": "purple",
+      "class_label": "Purple"
+    },
+    {
+      "logit_index": 182,
+      "attribute": "hair_color",
+      "attribute_label": "Hair color",
+      "class_index": 10,
+      "class_code": "pink",
+      "class_label": "Pink"
+    },
+    {
+      "logit_index": 183,
+      "attribute": "hair_color",
+      "attribute_label": "Hair color",
+      "class_index": 11,
+      "class_code": "multicolor",
+      "class_label": "Multicolor"
+    },
+    {
+      "logit_index": 184,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 0,
+      "class_code": "umbrella",
+      "class_label": "Umbrella"
+    },
+    {
+      "logit_index": 185,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 1,
+      "class_code": "phone",
+      "class_label": "Phone"
+    },
+    {
+      "logit_index": 186,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 2,
+      "class_code": "bottle",
+      "class_label": "Bottle"
+    },
+    {
+      "logit_index": 187,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 3,
+      "class_code": "document",
+      "class_label": "Document"
+    },
+    {
+      "logit_index": 188,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 4,
+      "class_code": "book",
+      "class_label": "Book"
+    },
+    {
+      "logit_index": 189,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 5,
+      "class_code": "laptop",
+      "class_label": "Laptop"
+    },
+    {
+      "logit_index": 190,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 6,
+      "class_code": "tablet",
+      "class_label": "Tablet"
+    },
+    {
+      "logit_index": 191,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 7,
+      "class_code": "package",
+      "class_label": "Package"
+    },
+    {
+      "logit_index": 192,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 8,
+      "class_code": "bicycle",
+      "class_label": "Bicycle"
+    },
+    {
+      "logit_index": 193,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 9,
+      "class_code": "baby_stroller",
+      "class_label": "Baby stroller"
+    },
+    {
+      "logit_index": 194,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 10,
+      "class_code": "shopping_cart",
+      "class_label": "Shopping cart"
+    },
+    {
+      "logit_index": 195,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 11,
+      "class_code": "skateboard",
+      "class_label": "Skateboard"
+    },
+    {
+      "logit_index": 196,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 12,
+      "class_code": "scooter",
+      "class_label": "Scooter"
+    },
+    {
+      "logit_index": 197,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 13,
+      "class_code": "sport_racket",
+      "class_label": "Sport racket"
+    },
+    {
+      "logit_index": 198,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 14,
+      "class_code": "handheld_fan",
+      "class_label": "Handheld fan"
+    },
+    {
+      "logit_index": 199,
+      "attribute": "carried_objects",
+      "attribute_label": "Carried objects",
+      "class_index": 15,
+      "class_code": "pet",
+      "class_label": "Pet"
+    }
+  ]
+}

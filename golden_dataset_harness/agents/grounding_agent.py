@@ -37,27 +37,48 @@ def _generate_claims(caption: str, attributes: PersonAttributes) -> list[str]:
     if caption:
         claims.append(caption)
 
-    # Convert each non-unknown attribute to a natural-language claim
-    attr_dict = attributes.model_dump()
-    claim_templates: dict[str, str] = {
-        "gender": "The person is {value}.",
-        "age_group": "The person appears to be {value}.",
-        "upper_clothing": "The person is wearing {value} on top.",
-        "upper_color": "The person's upper clothing is {value}.",
-        "lower_clothing": "The person is wearing {value} on the bottom.",
-        "lower_color": "The person's lower clothing is {value}.",
-        "bag": "The person has a {value}.",
-        "hair": "The person has {value}.",
-        "hat": "The person is wearing a {value}.",
-        "glasses": "The person is wearing {value} glasses.",
-        "footwear": "The person is wearing {value}.",
+    claim_templates = {
+        "age": "The person's apparent age group is {value}.",
+        "gender": "The person's apparent gender is {value}.",
+        "body_build": "The person's visible body build is {value}.",
+        "upper_clothing_type": "The person's upper clothing type is {value}.",
+        "upper_clothing_color": "The person's upper clothing is {value}.",
+        "lower_clothing_type": "The person's lower clothing type is {value}.",
+        "lower_clothing_color": "The person's lower clothing is {value}.",
+        "clothing_style": "The person's clothing style is {value}.",
+        "upper_pattern": "The person's upper clothing pattern is {value}.",
+        "footwear_type": "The person's footwear is {value}.",
+        "bag_type": "The person has a {value}.",
+        "bag_color": "A bag the person carries is {value}.",
+        "headwear": "The person's headwear is {value}.",
+        "eyewear": "The person's eyewear is {value}.",
+        "face_mask": "The person's face covering is {value}.",
+        "other_accessories": "The person wears a {value}.",
+        "hair_length": "The person's hair length is {value}.",
+        "hair_texture": "The person's hair texture is {value}.",
+        "hairstyle": "The person's hairstyle is {value}.",
+        "hair_color": "The person's hair color is {value}.",
+        "carried_objects": "The person carries or accompanies a {value}.",
     }
-
-    for attr_name, value in attr_dict.items():
-        if value and value != "unknown" and value != "none":
-            template = claim_templates.get(attr_name)
-            if template:
-                claims.append(template.format(value=value.replace("_", " ")))
+    absence_claims = {
+        "bag_type": "The person has no bag.",
+        "bag_color": "The person has no bag with a color to annotate.",
+        "other_accessories": "The person wears none of the listed other accessories.",
+        "carried_objects": "The person carries or accompanies none of the listed objects.",
+        "headwear": "The person wears no headwear.",
+        "eyewear": "The person wears no eyewear.",
+        "face_mask": "The person wears no face covering.",
+    }
+    for attr_name, value in attributes.model_dump().items():
+        if value is None or value == "unknown":
+            continue
+        if value == [] or value == "none":
+            claims.append(absence_claims[attr_name])
+            continue
+        values = value if isinstance(value, list) else [value]
+        for code in values:
+            if code != "unknown":
+                claims.append(claim_templates[attr_name].format(value=code.replace("_", " ")))
 
     return claims
 

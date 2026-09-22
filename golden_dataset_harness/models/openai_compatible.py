@@ -16,6 +16,12 @@ from golden_dataset_harness.models.base import BaseVisionLanguageModel
 from golden_dataset_harness.models.oauth import OAuthError, OAuthTokenProvider
 from golden_dataset_harness.models.provider_settings import ProviderSettings
 from golden_dataset_harness.schemas.annotation import GroundingResult, QualityJudgment
+from golden_dataset_harness.schemas.taxonomy import (
+    AttributeValue,
+    Taxonomy,
+    attributes_json_schema,
+    validate_attributes,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -189,33 +195,37 @@ class OpenAICompatibleVLM(BaseVisionLanguageModel):
         )
         return (await self._call_api(self._prepare_messages(image, text), 0.4)).strip()
 
-    async def extract_attributes(
-        self, image: bytes, taxonomy: dict[str, list[str]]
-    ) -> dict[str, str]:
-        properties = {
-            key: {"type": "string", "enum": values}
-            for key, values in taxonomy.items()
-        }
-        schema = {
-            "type": "object",
-            "properties": properties,
-            "required": list(properties),
-            "additionalProperties": False,
-        }
-        prompt = (
-            "Extract only visually supported person attributes. For every field choose exactly "
-            "one allowed enum. Use unknown when the attribute is hidden, ambiguous or absent."
+    @staticmethod
+    def attribute_prompt(taxonomy: Taxonomy) -> str:
+        """The shared extraction prompt, exposed for reproducible baseline metadata."""
+        return (
+            "Annotate the visible person using the supplied SigLIP taxonomy. "
+            "Return every field. Single-label fields use exactly one allowed code; "
+            "multi-label fields use an array of all visible class codes, without duplicates. "
+            "Use [] only when the relevant region is visible and no items are present. "
+            "Use unknown only if it is an allowed class and the attribute is unclear. "
+            "Otherwise use null for an unannotated/occluded/ambiguous field; never guess. "
+            "none is a literal class only where listed, never an array item. "
+            "Describe apparent age/gender only; do not infer identity. "
+            "Bag type and bag color are independent sets, not paired arrays. "
+            f"Attribute definitions: {json.dumps(taxonomy)}"
         )
+
+    async def extract_attributes(
+        self, image: bytes, taxonomy: Taxonomy
+    ) -> dict[str, AttributeValue]:
+        schema = attributes_json_schema(taxonomy)
+        prompt = self.attribute_prompt(taxonomy)
         content = await self._call_api(
             self._prepare_messages(image, prompt),
             0.0,
             self._json_schema("person_attributes", schema),
         )
         data = self._parse_json(content)
-        for key, values in taxonomy.items():
-            if data.get(key) not in values:
-                raise VLMServiceError(f"Invalid value returned for attribute {key}")
-        return {key: str(data[key]) for key in taxonomy}
+        try:
+            return validate_attributes(data, taxonomy, require_all=True)
+        except ValueError as exc:
+            raise VLMServiceError(str(exc)) from exc
 
     async def verify_claim(self, image: bytes, claim: str) -> GroundingResult:
         schema = {
