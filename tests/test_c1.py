@@ -1,118 +1,214 @@
-"""Direct extraction: no extra AI stages, explicit model, real HTTP attempt accounting."""
+"""C1 production boundaries: config, OAuth, retry, strict response and atomic output."""
 
+from __future__ import annotations
+
+import base64
+import io
 import json
+import os
 
 import httpx
 import pytest
-from test_baseline_io import complete_attributes
-from test_openai_compatible import jpeg_bytes, make_settings
+from PIL import Image
 
-from c1_vllm_medium.__main__ import main
-from c1_vllm_medium.runner import VLLMPredictor, load_settings
-from golden_dataset_harness.baselines.io import BaselineConfigError, run_images
-from golden_dataset_harness.models.oauth import OAuthTokenProvider
-from golden_dataset_harness.models.openai_compatible import OpenAICompatibleVLM
-
-
-def test_model_does_not_inherit_large(monkeypatch):
-    monkeypatch.delenv("C1_VLLM_MODEL", raising=False)
-    monkeypatch.setenv("VLLM_MODEL", "v-llm-v1-large")
-    with pytest.raises(BaselineConfigError, match="Medium"):
-        load_settings(None)
-    with pytest.raises(BaselineConfigError, match="not v-llm-v1-large"):
-        load_settings("v-llm-v1-large")
+from c1_vllm_medium.api import VllmAttributeClient, parse_annotation, request_body
+from c1_vllm_medium.config import DEFAULT_MODEL, Settings, load_settings
+from c1_vllm_medium.errors import ApiError, ConfigurationError, ResponseValidationError
+from c1_vllm_medium.output import serialize_annotation, write_atomically
+from c1_vllm_medium.taxonomy import TAXONOMY, json_schema, validate_attributes
 
 
-def test_medium_id_overrides_shared_model_and_cli_overrides_environment(monkeypatch):
-    monkeypatch.setenv("VLLM_BASE_URL", "https://model.example.test")
-    monkeypatch.setenv("VLLM_CLIENT_ID", "client")
-    monkeypatch.setenv("VLLM_CLIENT_SECRET", "secret")
-    monkeypatch.setenv("VLLM_PROJECT_ID", "project")
-    monkeypatch.setenv("VLLM_MODEL", "v-llm-v1-large")
-    monkeypatch.setenv("C1_VLLM_MODEL", "medium-service-id")
-    assert load_settings(None).vllm_model == "medium-service-id"
-    assert load_settings("another-medium-id").vllm_model == "another-medium-id"
+def image_bytes() -> bytes:
+    stream = io.BytesIO()
+    Image.new("RGB", (480, 640), (100, 120, 140)).save(stream, "JPEG")
+    return stream.getvalue()
 
 
-def test_setup_errors_do_not_echo_credentials(monkeypatch, tmp_path, capsys):
-    image = tmp_path / "person.jpg"
-    image.write_bytes(jpeg_bytes())
-    monkeypatch.setenv("VLLM_BASE_URL", "private-host-and-secret-without-scheme")
-    code = main(["--image", str(image), "--model", "medium-service-id",
-                 "--output-dir", str(tmp_path / "out")])
-    assert code == 2
-    assert "private-host-and-secret" not in capsys.readouterr().err
-    assert not (tmp_path / "out").exists()
+def complete_attributes() -> dict:
+    return {
+        name: [] if definition["type"] == "multi_label" else definition["classes"][0]
+        for name, definition in TAXONOMY.items()
+    }
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize("retry_401", [False, True])
-async def test_one_extraction_and_actual_http_attempts(tmp_path, monkeypatch, retry_401):
-    requests = []
-    chat_count = 0
-    expected = complete_attributes()
-    expected.update(gender=None, bag_type=["backpack", "handbag"], bag_color=["unknown"])
+def annotation(attributes: dict | None = None, caption: str = "A person wearing a jacket.") -> dict:
+    return {"caption": caption, "attributes": attributes or complete_attributes()}
 
-    def handler(request):
-        nonlocal chat_count
+
+def settings(**overrides) -> Settings:
+    value = {
+        "base_url": "https://model.example.test/v1",
+        "client_id": "client",
+        "client_secret": "secret",
+        "project_id": "project",
+    }
+    value.update(overrides)
+    return Settings(**value)
+
+
+def test_schema_contains_caption_and_exactly_21_attributes_and_multilabel_arrays():
+    attributes = json_schema()
+    body = request_body(settings(), "data:image/jpeg;base64,x")
+    schema = body["response_format"]["json_schema"]["schema"]
+    assert schema["required"] == ["caption", "attributes"]
+    assert schema["properties"]["caption"]["minLength"] == 1
+    assert attributes["required"] == list(TAXONOMY)
+    assert len(attributes["properties"]) == 21
+    assert attributes["additionalProperties"] is False
+    assert attributes["properties"]["bag_type"]["anyOf"][0]["type"] == "array"
+    assert attributes["properties"]["bag_type"]["anyOf"][0]["uniqueItems"] is True
+    assert DEFAULT_MODEL == "v-llm-v1-medium"
+
+
+@pytest.mark.parametrize("bad", [
+    {"gender": "robot"},
+    {**complete_attributes(), "extra": "no"},
+    {key: value for key, value in complete_attributes().items() if key != "age"},
+    {**complete_attributes(), "bag_type": "backpack"},
+    {**complete_attributes(), "bag_type": ["backpack", "backpack"]},
+])
+def test_invalid_responses_are_rejected(bad):
+    with pytest.raises(ValueError):
+        validate_attributes(bad)
+
+
+def test_dotenv_environment_and_cli_precedence(tmp_path, monkeypatch):
+    dotenv = tmp_path / ".env"
+    dotenv.write_text(
+        "C1_BASE_URL=https://file.example\nC1_CLIENT_ID=file-id\n"
+        "C1_CLIENT_SECRET=file-secret\nC1_PROJECT_ID=file-project\nC1_MODEL=file-model\n"
+    )
+    monkeypatch.setenv("C1_MODEL", "environment-model")
+    loaded = load_settings(
+        dotenv_path=dotenv,
+        overrides={"C1_BASE_URL": "https://cli.example", "C1_MODEL": "cli-model"},
+    )
+    assert loaded.base_url == "https://cli.example"
+    assert loaded.model == "cli-model"
+    assert loaded.client_secret == "file-secret"
+
+
+def test_shared_vllm_configuration_uses_medium_model(tmp_path):
+    dotenv = tmp_path / ".env"
+    dotenv.write_text(
+        "VLLM_BASE_URL=https://shared.example\nVLLM_CLIENT_ID=shared-id\n"
+        "VLLM_CLIENT_SECRET=shared-secret\nVLLM_PROJECT_ID=shared-project\n"
+        "VLLM_MODEL=v-llm-v1-large\n"
+    )
+    loaded = load_settings(dotenv_path=dotenv)
+    assert loaded.base_url == "https://shared.example"
+    assert loaded.client_id == "shared-id"
+    assert loaded.model == "v-llm-v1-medium"
+
+
+def test_invalid_dotenv_and_config_do_not_expose_secret(tmp_path):
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("invalid-line-with-secret\n")
+    with pytest.raises(ConfigurationError) as error:
+        load_settings(dotenv_path=dotenv)
+    assert "secret" not in str(error.value).lower()
+
+
+def test_documented_oauth_and_chat_request_with_json_schema():
+    requests: list[httpx.Request] = []
+    attributes = complete_attributes()
+    attributes.update(gender=None, bag_type=["backpack", "handbag"], bag_color=["unknown"])
+    expected = annotation(attributes, "A person carries a backpack and a handbag.")
+
+    def handler(request: httpx.Request) -> httpx.Response:
         requests.append(request)
         if request.url.path.endswith("/oauth/token"):
-            return httpx.Response(200, json={"access_token": "secret-token", "expires_in": 3600})
-        chat_count += 1
+            assert json.loads(request.content) == {
+                "client_id": "client", "client_secret": "secret", "project_id": "project",
+            }
+            return httpx.Response(200, request=request, json={
+                "access_token": "access-token", "expires_in": 3600,
+            })
         payload = json.loads(request.content)
-        assert payload["model"] == "medium-service-id"
-        assert payload["temperature"] == 0
-        assert payload["response_format"]["json_schema"]["name"] == "person_attributes"
-        assert len(payload["response_format"]["json_schema"]["schema"]["required"]) == 21
-        if retry_401 and chat_count == 1:
-            return httpx.Response(401)
-        return httpx.Response(200, json={"choices": [{"message": {
-            "content": json.dumps(expected),
-        }}]})
+        assert request.url.path == "/v1/chat/completions"
+        assert request.headers["authorization"] == "Bearer access-token"
+        assert payload["model"] == "v-llm-v1-medium"
+        assert payload["chat_template_kwargs"] == {"enable_thinking": False}
+        assert payload["response_format"]["type"] == "json_schema"
+        schema = payload["response_format"]["json_schema"]["schema"]
+        assert payload["response_format"]["json_schema"]["name"] == "person_annotation"
+        assert schema["required"] == ["caption", "attributes"]
+        assert schema["properties"]["attributes"]["required"] == list(TAXONOMY)
+        image_url = payload["messages"][0]["content"][1]["image_url"]["url"]
+        assert image_url.startswith("data:image/jpeg;base64,")
+        assert len(base64.b64decode(image_url.split(",", 1)[1])) <= 60_000
+        return httpx.Response(200, request=request, json={
+            "choices": [{"message": {"content": json.dumps(expected)}}],
+        })
 
-    async def forbidden(*args, **kwargs):
-        pytest.fail("C1 must not call caption, grounding or judge")
-
-    for name in ("generate_caption", "verify_claim", "judge_quality"):
-        monkeypatch.setattr(OpenAICompatibleVLM, name, forbidden)
-    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        settings = make_settings(vllm_model="medium-service-id")
-        model = OpenAICompatibleVLM(settings, OAuthTokenProvider(settings, client), client)
-        predictor = VLLMPredictor(model)
-        client.event_hooks["request"].append(predictor.count_request)
-        image = tmp_path / "person.jpg"
-        image.write_bytes(jpeg_bytes())
-        output = tmp_path / "out"
-        summary = await run_images(predictor, [image], output)
-    assert summary["model_calls"] == 1
-    assert summary["http_attempts"] == (2 if retry_401 else 1)
-    row = json.loads((output / "predictions.jsonl").read_text())
-    assert row["attributes"] == expected
-    assert row["scores"] is None
-    assert "confidence" not in row
-    assert "secret-token" not in (output / "summary.json").read_text()
-    assert summary["config"]["prompt_sha256"]
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    result = VllmAttributeClient(
+        settings(), client, sleep=lambda _: None
+    ).annotate(image_bytes())
+    assert result == expected
+    assert [request.url.path for request in requests] == ["/oauth/token", "/v1/chat/completions"]
 
 
-@pytest.mark.asyncio
-async def test_invalid_remote_output_is_a_recorded_failure(tmp_path):
-    class TokenProvider:
-        async def get_token(self, **kwargs):
-            return "test-token"
+def test_401_refresh_and_transient_retry_are_bounded():
+    token_calls = 0
+    chat_calls = 0
+    delays: list[float] = []
 
-    def handler(request):
-        return httpx.Response(200, json={"choices": [{"message": {
-            "content": '{"gender":"female"}',
-        }}]})
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal token_calls, chat_calls
+        if request.url.path.endswith("/oauth/token"):
+            token_calls += 1
+            return httpx.Response(200, request=request, json={
+                "access_token": f"token-{token_calls}", "expires_in": 3600,
+            })
+        chat_calls += 1
+        if chat_calls == 1:
+            return httpx.Response(401, request=request)
+        if chat_calls == 2:
+            return httpx.Response(429, request=request, headers={"retry-after": "0"})
+        return httpx.Response(200, request=request, json={
+            "choices": [{"message": {"content": json.dumps(annotation())}}],
+        })
 
-    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        model = OpenAICompatibleVLM(
-            make_settings(vllm_model="medium-test"), TokenProvider(), client,
-        )
-        predictor = VLLMPredictor(model)
-        client.event_hooks["request"].append(predictor.count_request)
-        image = tmp_path / "person.jpg"
-        image.write_bytes(jpeg_bytes())
-        summary = await run_images(predictor, [image], tmp_path / "out")
-    assert summary["error_count"] == 1
-    assert summary["model_calls"] == summary["http_attempts"] == 1
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    result = VllmAttributeClient(
+        settings(max_retries=3), client, sleep=delays.append
+    ).annotate(image_bytes())
+    assert result == annotation()
+    assert token_calls == 2
+    assert chat_calls == 3
+    assert delays == [0.0]
+
+
+def test_retry_exhaustion_and_response_errors_are_safe():
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/oauth/token"):
+            return httpx.Response(200, request=request, json={
+                "access_token": "token", "expires_in": 3600,
+            })
+        return httpx.Response(503, request=request, text="provider-secret-body")
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    with pytest.raises(ApiError) as error:
+        VllmAttributeClient(
+            settings(max_retries=2), client, sleep=lambda _: None
+        ).annotate(image_bytes())
+    assert "provider-secret-body" not in str(error.value)
+
+    response = httpx.Response(
+        200,
+        json={"choices": [{"message": {"content": '{"caption":"", "attributes":{}}'}}]},
+    )
+    with pytest.raises(ResponseValidationError):
+        parse_annotation(response)
+
+
+def test_request_body_and_atomic_output(tmp_path):
+    body = request_body(settings(), "data:image/jpeg;base64,x")
+    assert body["model"] == "v-llm-v1-medium"
+    assert body["response_format"]["json_schema"]["name"] == "person_annotation"
+    target = tmp_path / "nested" / "annotation.json"
+    expected = annotation()
+    write_atomically(target, serialize_annotation(expected))
+    assert json.loads(target.read_text()) == expected
+    assert os.stat(target).st_mode & 0o777 == 0o600

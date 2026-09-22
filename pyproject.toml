@@ -61,3 +61,4 @@ exclude = ["tests*"]
 
 [tool.setuptools.package-data]
 golden_dataset_harness = ["configs/*.yaml", "api/templates/*.html"]
+c1_vllm_medium = ["attribute_schema.json", ".env.example"]
