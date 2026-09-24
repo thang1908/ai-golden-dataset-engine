@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .client import VllmClient
+from .agents.nodes import caption_agent, consensus_agent, observer_agent, vietnamese_translation_agent
 from .errors import ResponseValidationError
 from .prompts import caption_prompt, consensus_prompt, observer_prompt
 from .taxonomy import attribute_json_schema, validate_attributes
@@ -47,35 +48,23 @@ def _annotation(value: dict[str, Any]) -> dict[str, Any]:
 def run(image: bytes, client: VllmClient) -> dict[str, Any]:
     candidates = [
         _annotation(
-            client.complete(
-                prompt=observer_prompt(index),
-                schema_name=f"observer_{index + 1}",
-                schema=ANNOTATION_SCHEMA,
-                image=image,
-            )
+            observer_agent(index, image, client, ANNOTATION_SCHEMA)
         )
         for index in range(4)
     ]
-    consensus = client.complete(
-        prompt=consensus_prompt(candidates),
-        schema_name="attribute_consensus",
-        schema=CONSENSUS_SCHEMA,
-        image=image,
-    )
+    consensus = consensus_agent(image, candidates, client, CONSENSUS_SCHEMA)
     try:
         if set(consensus) != {"attributes"}:
             raise ValueError
         attributes = validate_attributes(consensus["attributes"])
     except (KeyError, TypeError, ValueError) as exc:
         raise ResponseValidationError("Model returned invalid consensus attributes") from exc
-    caption_response = client.complete(
-        prompt=caption_prompt(attributes), schema_name="caption", schema=CAPTION_SCHEMA
-    )
+    caption_response = caption_agent(attributes, client, CAPTION_SCHEMA)
     caption = caption_response.get("caption")
     if not isinstance(caption, str) or not (caption := caption.strip()) or len(caption) > 500:
         raise ResponseValidationError("Model returned an invalid caption")
     return {
         "caption": caption,
-        "caption_vi": translate_caption(client, caption),
+        "caption_vi": vietnamese_translation_agent(caption, client),
         "attributes": attributes,
     }

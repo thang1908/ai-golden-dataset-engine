@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from threading import Lock
 
 import httpx
 
@@ -13,11 +14,17 @@ class TokenProvider:
         self._settings, self._client = settings, client
         self._token: str | None = None
         self._expires_at = 0.0
+        self._lock = Lock()
 
     def invalidate(self) -> None:
-        self._token, self._expires_at = None, 0.0
+        with self._lock:
+            self._token, self._expires_at = None, 0.0
 
     def get(self, *, force_refresh: bool = False) -> str:
+        with self._lock:
+            return self._get_locked(force_refresh=force_refresh)
+
+    def _get_locked(self, *, force_refresh: bool) -> str:
         if not force_refresh and self._token and time.monotonic() < self._expires_at - 60:
             return self._token
         try:
@@ -39,4 +46,3 @@ class TokenProvider:
             raise AuthenticationError("OAuth response is missing a valid access token")
         self._token, self._expires_at = token, time.monotonic() + float(expires_in)
         return token
-

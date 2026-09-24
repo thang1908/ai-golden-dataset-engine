@@ -142,3 +142,142 @@ Flow output names are `g1_direct_annotation`, `g2_facts_then_caption`,
 
 Alternative shared-core structures are recorded in ADR-001.
 
+## Gemini evaluation package
+
+```text
+AI_harness_evaluation/
+├── __main__.py, cli.py, config.py
+├── dataset.py                 # query/attribute/prediction join
+├── gemini_client.py           # only Gemini SDK/provider boundary
+├── prompts.py, contracts.py, pipeline.py, output.py
+└── parallel.py                # bounded concurrent execution
+
+tests/test_ai_harness_evaluation.py # mocked Gemini transport and local fixtures
+```
+
+`AI_harness_evaluation/` reads G1–G5 output but no generator imports it. The command
+is `python -m AI_harness_evaluation`. `dataset.py` uses the existing
+`output/review/captions_merged.csv` sample-to-image mapping and rejects missing or
+ambiguous rows; it never guesses image order from an identity folder.
+
+## Proposed local dashboard structure
+
+```text
+dashboard/                              # [I] static, local UI
+├── index.html                           # [I] lookup screen
+├── app.js                               # [I] exact-key lookup and UI states
+└── styles.css                           # [I] minimal desktop-first presentation
+
+tools/build_dashboard_index.py           # [I] validates and produces the index
+tools/serve_dashboard.py                 # [I] narrow loopback-only static server
+output/dashboard/index.json              # [G] generated person_key → image mapping
+```
+
+`dashboard/` contains no secrets, source data copy, model client, or backend.
+`tools/build_dashboard_index.py` is the only new writer and produces only the
+generated index after validating `sample/test/attributes.tsv`,
+`output/review/captions_merged.csv`, and each referenced image file. Static assets
+are served by the narrow loopback server together with the allowed test-image
+paths; the repository root itself is never served.
+
+## Proposed dashboard review extension
+
+```text
+dashboard/
+├── index.html                           # [M] review controls and result regions
+├── app.js                               # [M] lookup, load, edit, save, export UI
+└── styles.css                           # [M] readable source/editing states
+
+tools/serve_dashboard.py                 # [M] narrow static files plus local review API
+tools/export_evaluation_to_xlsx.mjs      # [M] merges human overrides into Excel output
+output/dashboard/review_overrides.json   # [G] atomic human-review overlay
+tests/test_dashboard_review.py            # [P] mapping, validation, read/write API tests
+```
+
+The review extension remains a local vertical feature: browser code calls only
+`serve_dashboard.py`; that server owns reads/writes of the override artifact and
+invokes the exporter. The exporter reads source evaluation JSONL plus overrides but
+does not import dashboard browser code. Generated override and Excel files are not
+source inputs to G1–G5 or Gemini evaluation.
+
+## AI Harness evaluation v2 transition (proposed)
+
+```text
+AI_harness_evaluation/
+├── contracts.py             # [M] v2 schema + semantic truth table
+├── prompts.py               # [M] factuality-only Vietnamese judge instructions
+├── pipeline.py              # [M] v2 JSONL envelope and nullable summaries
+├── cli.py, output.py         # [M] reviews_v2.jsonl selection/default
+├── gemini_client.py          # [M] existing provider boundary receives v2 schema
+└── dataset.py                # [E] exact image/prediction/golden join
+
+tools/export_evaluation_to_xlsx.mjs       # [M] v2 worksheets and human columns
+tools/build_g3_g5_evaluation_report.py    # [M] factuality, accuracy, coverage
+tools/serve_dashboard.py                   # [M] v2 review endpoint validation
+dashboard/                                 # [M] v2 source and human review fields
+tests/test_ai_harness_evaluation.py        # [M] schema and null-invariant tests
+output/evaluation/reviews_v2.jsonl         # [G] v2 results
+output/dashboard/review_overrides_v2.json  # [G] v2 human overlay
+```
+
+`contracts.py` is the only owner of result invariants. Presentation/reporting code
+may consume validated rows but cannot reinterpret a null as an error. V1 remains a
+legacy artifact and is not mixed with v2 by default.
+
+Only evaluator contracts, prompt, pipeline/CLI/output as necessary, and evaluator
+tests are modified. Dashboard/export/report paths are deliberately excluded.
+
+### V2 consumer extension (proposed)
+
+```text
+dashboard/
+├── app.js, index.html, styles.css          # [M] v2 tri-state source/editor fields
+tools/
+├── serve_dashboard.py                      # [M] reads/saves v2 review/overlay
+└── export_evaluation_to_xlsx.mjs           # [M] exports v2 review workbook
+tests/
+└── test_dashboard_review.py                # [P] v2 load/override validation tests
+output/dashboard/review_overrides_v2.json   # [G] human v2 overlay
+output/evaluation/evaluation_review_v2.xlsx # [G] v2 workbook
+```
+
+The server owns validation and atomic overlay writes. Browser code never reads raw
+filesystem paths other than allowed images/index, and the Node exporter never imports
+browser code. These modules depend on the v2 evaluation contract but not Gemini SDK
+or any G-flow package.
+
+### Isolated judge implementation (proposed)
+
+`prompts.py` gains separate caption/attribute builders; `contracts.py` owns separate
+schemas; `gemini_client.py` accepts the selected schema; `pipeline.py` performs and
+combines two validated calls. Tests assert that caption context cannot contain
+generated or golden attribute payloads.
+
+### Two-branch v3 transition (approved)
+
+```text
+AI_harness_evaluation/
+├── prompts.py                         # [M] two isolated prompt builders
+├── contracts.py                       # [M] two response schemas + invariants
+├── gemini_client.py                   # [M] selected response schema per call
+├── pipeline.py                        # [M] two-call orchestration, one row flush
+├── cli.py, output.py                  # [M] reviews_v3.jsonl defaults
+└── tests/test_ai_harness_evaluation.py # [M] context-isolation and null tests
+
+tools/serve_dashboard.py                # [M] v3 review API/read model
+tools/export_evaluation_to_xlsx.mjs     # [M] v3 separate branch worksheets
+dashboard/                              # [M] v3 labels and separate panels
+output/evaluation/reviews_v3.jsonl      # [G] v3 source evaluation
+output/dashboard/review_overrides_v3.json # [G] v3 human overlay
+output/evaluation/evaluation_review_v3.xlsx # [G] derived v3 workbook
+```
+
+Existing v2 files remain read-only historical artifacts. No G1–G5 module, output,
+or test image is modified by this transition.
+
+`tools/export_evaluation_to_xlsx.mjs --split` writes generated method-specific
+v3 workbooks under `output/evaluation/`; it remains a passive consumer of evaluator
+JSONL and dashboard overrides.
+
+The detailed code-reading map for the three active generator packages is
+[`docs/g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation_guide.md).

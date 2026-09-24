@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .errors import ConfigurationError
+from .errors import ConfigurationError, G5Error
 from .taxonomy import TAXONOMY
 
 
@@ -59,12 +59,13 @@ def prediction_row(
     model: str,
     latency_ms: float,
     error: str | None = None,
+    error_code: str = "generation_failed",
 ) -> dict[str, Any]:
     row: dict[str, Any] = {
         "sample_id": sample.sample_id,
         "method": "g5_qa_refinement",
         "model_id": model,
-        "prompt_version": "qa_refinement_v1",
+        "prompt_version": "qa_refinement_v3",
         "latency_ms": round(latency_ms, 2),
         "status": "success" if error is None else "error",
     }
@@ -72,8 +73,10 @@ def prediction_row(
         row["caption"] = annotation["caption"]
         row["caption_vi"] = annotation["caption_vi"]
         row["attributes"] = annotation["attributes"]
+        row["workflow_status"] = annotation.get("workflow_status", "accepted")
+        row["workflow_notes"] = annotation.get("workflow_notes", [])
     else:
-        row["error"] = {"code": "generation_failed", "message": error or "Generation failed"}
+        row["error"] = {"code": error_code, "message": error or "Generation failed"}
     return row
 
 
@@ -91,6 +94,17 @@ def generate_dataset(samples: list[TestSample], annotate, *, model: str) -> list
                     latency_ms=(time.perf_counter() - started) * 1000,
                 )
             )
+        except G5Error as exc:
+            rows.append(
+                prediction_row(
+                    sample,
+                    None,
+                    model=model,
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                    error=str(exc),
+                    error_code=str(exc).split(":", 1)[0].replace(" ", "_").lower(),
+                )
+            )
         except Exception:
             rows.append(
                 prediction_row(
@@ -98,8 +112,7 @@ def generate_dataset(samples: list[TestSample], annotate, *, model: str) -> list
                     None,
                     model=model,
                     latency_ms=(time.perf_counter() - started) * 1000,
-                    error="The image could not be annotated",
+                    error="An unexpected local generation error occurred",
                 )
             )
     return rows
-

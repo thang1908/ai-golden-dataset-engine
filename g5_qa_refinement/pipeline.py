@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from .client import VllmClient
-from .errors import ResponseValidationError
+from .agents.nodes import answer_agent, compare_agent, draft_agent, question_agent, vietnamese_translation_agent
+from .errors import G5Error, ResponseValidationError
 from .prompts import answers_prompt, compare_prompt, draft_prompt, questions_prompt
 from .taxonomy import attribute_json_schema, validate_attributes
 from .translation import translate_caption
@@ -25,22 +26,118 @@ def _annotation(value: dict[str, Any]) -> dict[str, Any]:
         raise ResponseValidationError("Model returned an invalid draft") from exc
 
 
+def _stage(stage: str, operation) -> dict[str, Any]:
+    try:
+        return operation()
+    except G5Error as exc:
+        raise ResponseValidationError(f"{stage}: {exc}") from exc
+
+
+def _validated(stage: str, operation, validate):
+    last_error: ResponseValidationError | None = None
+    # The provider's schema mode can still emit malformed or locally invalid JSON.
+    # Retry the model once after the transport-level retries in VllmClient are exhausted.
+    for _ in range(2):
+        try:
+            return validate(_stage(stage, operation))
+        except ResponseValidationError as exc:
+            last_error = exc
+    assert last_error is not None
+    raise last_error
+
+
+def _questions(value: dict[str, Any]) -> list[dict[str, str]]:
+    questions = value.get("questions")
+    valid = (
+        isinstance(questions, list)
+        and questions
+        and all(
+            isinstance(item, dict)
+            and set(item) == {"id", "target", "question"}
+            and all(isinstance(item[key], str) and item[key].strip() for key in item)
+            for item in questions
+        )
+        and len({item["id"] for item in questions}) == len(questions)
+    )
+    if not valid:
+        raise ResponseValidationError("Model returned invalid verification questions")
+    return questions
+
+
+def _answers(value: dict[str, Any], question_ids: set[str]) -> list[dict[str, Any]]:
+    answers = value.get("answers")
+    valid = (
+        isinstance(answers, list)
+        and all(
+            isinstance(item, dict)
+            and set(item) == {"question_id", "answer", "evidence", "determinable"}
+            and isinstance(item["question_id"], str)
+            and isinstance(item["answer"], str)
+            and item["answer"].strip()
+            and isinstance(item["evidence"], str)
+            and item["evidence"].strip()
+            and isinstance(item["determinable"], bool)
+            for item in answers
+        )
+        and {item["question_id"] for item in answers} == question_ids
+    )
+    if not valid:
+        raise ResponseValidationError("Model returned incomplete image answers")
+    return answers
+
+
+def _comparison(value: dict[str, Any]) -> tuple[str, list[str]]:
+    decision, corrections = value.get("decision"), value.get("corrections")
+    if (
+        decision not in {"accept", "refine"}
+        or not isinstance(corrections, list)
+        or not all(isinstance(item, str) and item.strip() for item in corrections)
+    ):
+        raise ResponseValidationError("Model returned invalid comparison")
+    return decision, corrections
+
+
 def run(image: bytes, client: VllmClient, *, max_refinements: int = 2) -> dict[str, Any]:
     if max_refinements < 0: raise ValueError("max_refinements cannot be negative")
     corrections: list[str] | None = None
     for round_index in range(max_refinements + 1):
-        draft = _annotation(client.complete(prompt=draft_prompt(corrections), schema_name="draft_annotation", schema=ANNOTATION_SCHEMA, image=image))
-        question_value = client.complete(prompt=questions_prompt(draft), schema_name="verification_questions", schema=QUESTION_SCHEMA)
-        questions = question_value.get("questions")
-        if not isinstance(questions, list) or len({item.get("id") for item in questions if isinstance(item, dict)}) != len(questions): raise ResponseValidationError("Model returned invalid verification questions")
-        answer_value = client.complete(prompt=answers_prompt(questions), schema_name="image_answers", schema=ANSWER_SCHEMA, image=image)
-        answers = answer_value.get("answers")
+        draft = _validated(
+            "draft_annotation",
+            lambda: draft_agent(image, corrections, client, ANNOTATION_SCHEMA),
+            _annotation,
+        )
+        questions = _validated(
+            "verification_questions",
+            lambda: question_agent(draft, client, QUESTION_SCHEMA),
+            _questions,
+        )
         question_ids = {item["id"] for item in questions}
-        if not isinstance(answers, list) or {item.get("question_id") for item in answers if isinstance(item, dict)} != question_ids: raise ResponseValidationError("Model returned incomplete image answers")
-        comparison = client.complete(prompt=compare_prompt(draft, answers), schema_name="comparison", schema=COMPARE_SCHEMA)
-        decision, corrections = comparison.get("decision"), comparison.get("corrections")
-        if decision not in {"accept", "refine"} or not isinstance(corrections, list) or not all(isinstance(item, str) and item.strip() for item in corrections): raise ResponseValidationError("Model returned invalid comparison")
+        answers = _validated(
+            "image_answers",
+            lambda: answer_agent(image, questions, client, ANSWER_SCHEMA),
+            lambda value: _answers(value, question_ids),
+        )
+        decision, corrections = _validated(
+            "comparison", lambda: compare_agent(draft, answers, client, COMPARE_SCHEMA), _comparison
+        )
         if decision == "accept":
-            return {**draft, "caption_vi": translate_caption(client, draft["caption"])}
-        if round_index == max_refinements: break
-    raise ResponseValidationError("Comparison requested refinement after the bounded limit")
+            caption_vi = _stage(
+                "caption_vietnamese", lambda: vietnamese_translation_agent(draft["caption"], client)
+            )
+            return {
+                **draft,
+                "caption_vi": caption_vi,
+                "workflow_status": "accepted",
+                "workflow_notes": [],
+            }
+        if round_index == max_refinements:
+            caption_vi = _stage(
+                "caption_vietnamese", lambda: vietnamese_translation_agent(draft["caption"], client)
+            )
+            return {
+                **draft,
+                "caption_vi": caption_vi,
+                "workflow_status": "refine_limit_reached",
+                "workflow_notes": corrections,
+            }
+    raise ResponseValidationError("No draft was generated")

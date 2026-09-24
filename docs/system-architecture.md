@@ -158,3 +158,192 @@ five bounded synchronous pipelines (ADR-002).
 
 Relevant decisions: ADR-001 through ADR-006 in `docs/decisions.md`.
 
+## Proposed review workspace
+
+```mermaid
+flowchart LR
+  S["sample/test: image + golden TSV"] --> R["local review builder"]
+  O["output/g1...g5: JSONL"] --> R
+  R --> H["output/review/annotation_comparison.xlsx"]
+  H --> U["manual inspection"]
+```
+
+The builder is synchronous and read-only. It joins by `sample_id`, appends a
+column group for each available flow, and displays missing/malformed output as a
+local state rather than an evaluation. No database, server, queue, cache, or AI
+call is added.
+
+## Gemini evaluation extension
+
+```mermaid
+flowchart LR
+  Q["Query manifest + image"] --> L["Evaluation loader"]
+  A["attributes.tsv"] --> L
+  P["output/g1...g5 JSONL"] --> L
+  L --> G["Gemini judge: image + facts + prediction"]
+  G --> V["Local validator"]
+  V --> O["output/evaluation/reviews.jsonl"]
+```
+
+The local evaluator resolves one query image, then makes one stateless Gemini
+request for one `(sample_id, method)`. Gemini returns a caption verdict plus 21
+attribute verdicts. A single main writer flushes each validated JSONL row; terminal
+per-sample failures become redacted error rows and do not stop other samples. No
+queue, database, server, cache, or automatic correction is proposed.
+
+## Proposed local image-lookup dashboard
+
+```mermaid
+flowchart LR
+  A["sample/test/attributes.tsv"] --> B["build_dashboard_index.py"]
+  C["output/review/captions_merged.csv"] --> B
+  B --> D["output/dashboard/index.json"]
+  D --> E["Local static dashboard"]
+  F["User selects mapped image"] --> E
+  E --> G["Resolved image in sample/test/images"]
+```
+
+The index builder is an offline validation boundary. It joins `person_key` to
+`person_id` in `attributes.tsv`, treats that person ID as `sample_id`, and joins it
+to the existing exact `image_path` mapping. It fails closed on ambiguity or a
+missing file. The browser only reads the generated index and the selected local
+image; it contains no dataset-writing, model, Gemini, or credential path.
+
+Happy path: start the narrow loopback-only dashboard server; it exposes only the
+dashboard assets, `index.json`, and test-image paths. The browser renders mapped
+image cards; the operator selects one; the UI uses its exact mapped identity and
+renders the image. Failure path: unavailable/stale index or image-load failure
+renders a message and no unrelated image. The dashboard does not guess mappings.
+
+## Proposed editable evaluation review extension
+
+```mermaid
+flowchart LR
+  U["Operator"] --> UI["Dashboard review UI"]
+  UI --> R["Loopback review endpoints"]
+  R --> M["reviews.jsonl: latest source rows"]
+  R --> O["review_overrides.json: human overlay"]
+  R --> X["Excel exporter"]
+  X --> W["evaluation_review.xlsx"]
+```
+
+The same narrow loopback server gains three bounded responsibilities: read a latest
+evaluation by exact `(sample_id, method)`; atomically validate and store human
+overrides; and trigger the existing local Excel exporter after overrides have been
+saved. The browser never writes the source JSONL/TSV/XLSX files itself.
+
+Happy path: lookup key → select available method → view source values → enter human
+override fields → save an overlay → request Excel export → download the regenerated
+workbook. If an evaluation does not exist, the UI retains the image and shows no
+editor. A malformed save, unknown field/method, write failure, or exporter failure
+does not alter a prior override or source data and returns an actionable local error.
+
+## AI Harness evaluation v2 (proposed)
+
+```mermaid
+flowchart LR
+  I["Exact query image"] --> J["Gemini factuality judge"]
+  C["Generated caption"] --> J
+  P["Generated 21 attributes"] --> J
+  G["Golden 21 attributes"] --> J
+  J --> S["Strict JSON Schema"] --> V["Local semantic validator"]
+  V --> R["reviews_v2.jsonl"]
+  R --> D["Dashboard / Excel / report"]
+  H["Human correction"] --> O["review_overrides_v2.json"] --> D
+```
+
+One exact task remains one stateless Gemini call. Caption checks cover all 21 fields
+and a bounded unmapped-claim list so a false person count or invented object cannot
+evade review. The local validator enforces the boolean/null truth table, then the
+single writer flushes each completed v2 row. Per-task error rows are redacted and do
+not block workers. There is no automatic correction, acceptance threshold, or model
+feedback into G1–G5. Accuracy excludes null; coverage is displayed but cannot turn a
+factual caption into failure.
+
+This implementation boundary stops at `reviews_v2.jsonl`. Dashboard, workbook, and
+report boxes are future consumers only and will not be modified in this change.
+
+## V2 dashboard and Excel consumers (proposed)
+
+```mermaid
+flowchart LR
+  R["reviews_v2.jsonl"] --> S["Loopback dashboard server"]
+  R --> E["Excel exporter"]
+  O["review_overrides_v2.json"] --> S
+  O --> E
+  S --> B["Gallery / detail editor"]
+  B -->|"save human tri-state"| O
+  B -->|"export"| E
+  E --> X["evaluation_review_v2.xlsx"]
+```
+
+The server retains exact image mapping and loopback-only access. Its review endpoint
+reads only the latest v2 row and an optional v2 overlay. The exporter reads the same
+two files directly, so browser state never becomes a source of truth. Save uses a
+whole-file atomic overlay replacement; export creates a new v2 workbook without
+rewriting v1 artifacts. Missing v2 review, invalid override, failed save, and failed
+export are explicit UI errors.
+
+## Caption/attribute judge isolation (proposed)
+
+```mermaid
+flowchart LR
+  I["Query image"] --> C["Caption judge"]
+  T["Generated English caption"] --> C
+  I --> A["Attribute judge"]
+  P["Generated 21 attributes"] --> A
+  G["Golden 21 attributes"] --> A
+  C --> V["Local validators"]
+  A --> V
+  V --> R["One v2 review row"]
+```
+
+Two independent Gemini calls are combined only after local validation. Caption
+context never contains attributes or golden labels. A failure in either stage yields
+one redacted task error row; no partial success is published.
+
+## Two-branch evaluation v3 (approved)
+
+```mermaid
+flowchart LR
+  I["Exact query image"] --> CF["Caption factuality judge"]
+  C["Generated English caption"] --> CF
+  CF --> CV["Caption factuality validator"]
+
+  C --> CA["Caption-to-golden attribute judge"]
+  G["Golden 21 attributes"] --> CA
+  CA --> CAV["Caption attribute validator"]
+
+  CV --> R["One reviews_v3.jsonl row"]
+  CAV --> R
+  R --> D["v3 dashboard / Excel"]
+```
+
+The two calls deliberately answer different questions. Caption factuality has only
+visual evidence; caption attribute checks have only text and the frozen taxonomy
+reference. Generated structured attributes remain preserved prediction provenance but
+are not evaluated. The pipeline invokes the two calls sequentially inside one task
+worker, validates both locally, then flushes one completed row. A branch failure
+produces one redacted error row rather than a partial review.
+
+## Per-method Excel export v3 (approved)
+
+```mermaid
+flowchart LR
+  R["reviews_v3.jsonl"] --> E["Excel exporter"]
+  O["review_overrides_v3.json"] --> E
+  E --> G3["evaluation_review_g3_v3.xlsx"]
+  E --> G4["evaluation_review_g4_v3.xlsx"]
+  E --> G5["evaluation_review_g5_v3.xlsx"]
+```
+
+Each workbook filters to exactly one method. It contains a caption summary sheet
+and a per-attribute sheet; the latter preserves all 21 checks and their tri-state
+verdicts for every evaluated sample.
+
+## G3–G5 execution reference
+
+For exact node sequencing and evidence flow inside the independent G3, G4, and G5
+generators, see [`g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation_guide.md).
+That document is an observed-code reference; it does not alter the architecture
+requirements in this document.

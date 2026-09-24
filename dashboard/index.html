@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Image Review · Dataset</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section id="gallery-view">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Dataset review · Local only</p>
+          <h1>Chọn ảnh để review</h1>
+          <p class="lede">
+            Click một ảnh để xem evaluation, sửa nhãn và xuất Excel.
+          </p>
+        </div>
+        <div class="source-badge" aria-label="Nguồn dữ liệu local">Local dataset</div>
+      </header>
+
+      <section class="gallery-panel" aria-labelledby="gallery-title">
+        <div class="panel-heading">
+          <span class="step">01</span>
+          <div>
+            <h2 id="gallery-title">Ảnh dataset</h2>
+            <p>Chọn một ảnh để mở thông tin evaluation tương ứng.</p>
+          </div>
+        </div>
+        <div id="gallery-status" class="status" role="status" aria-live="polite"></div>
+        <div id="image-gallery" class="image-gallery" aria-live="polite"></div>
+      </section>
+      </section>
+
+      <section id="detail-view" class="is-hidden" aria-label="Evaluation detail">
+      <header class="detail-header">
+        <button id="back-button" class="back-button" type="button">← Quay lại gallery</button>
+        <p class="eyebrow">Image review</p>
+      </header>
+
+      <div class="review-workspace">
+      <section id="result-panel" class="result-panel" aria-labelledby="result-title">
+        <div class="result-header">
+          <div>
+            <p class="eyebrow">Kết quả đã map</p>
+            <h2 id="result-title">Ảnh dataset</h2>
+          </div>
+          <span class="verified">Đã xác thực mapping</span>
+        </div>
+        <figure class="image-frame">
+          <img id="result-image" alt="" />
+          <figcaption id="image-caption">Ảnh được chọn từ mapping hiện có.</figcaption>
+        </figure>
+        <dl class="metadata">
+          <div>
+            <dt>Person key</dt>
+            <dd id="result-person-key"></dd>
+          </div>
+          <div>
+            <dt>Sample ID</dt>
+            <dd id="result-sample-id"></dd>
+          </div>
+          <div class="metadata-path">
+            <dt>Image path</dt>
+            <dd id="result-image-path"></dd>
+          </div>
+        </dl>
+      </section>
+
+      <section id="review-panel" class="review-panel is-hidden" aria-labelledby="review-title">
+        <div class="result-header">
+          <div>
+            <p class="eyebrow">Evaluation review v3</p>
+            <h2 id="review-title">Kiểm tra factuality</h2>
+          </div>
+          <button id="export-button" class="secondary-button" type="button">Xuất Excel</button>
+        </div>
+
+        <div id="no-review" class="empty-state is-hidden">
+          Chưa có evaluation v3 cho ảnh này. Hãy chạy <code>AI_harness_evaluation</code> trước.
+        </div>
+
+        <form id="review-form" class="is-hidden">
+          <div class="method-row">
+            <label for="method-select">Method</label>
+            <select id="method-select" name="method"></select>
+            <p id="review-status" class="status" role="status" aria-live="polite"></p>
+          </div>
+
+          <section class="source-card" aria-labelledby="caption-title">
+            <div class="section-title">
+              <h3 id="caption-title">Caption factuality</h3>
+              <span id="source-caption-verdict" class="source-label"></span>
+            </div>
+            <div class="caption-grid">
+              <div><span>English</span><p id="caption-en"></p></div>
+              <div><span>Tiếng Việt</span><p id="caption-vi"></p></div>
+            </div>
+            <p class="source-note"><strong>Gemini note:</strong> <span id="caption-note"></span></p>
+            <div class="section-title claim-title">
+              <h4>Thuộc tính caption so với golden</h4>
+              <span id="caption-claim-summary" class="muted"></span>
+            </div>
+            <div id="caption-claims" class="claim-list"></div>
+            <label for="caption-human">Kết luận bạn chỉnh</label>
+            <select id="caption-human"></select>
+          </section>
+
+          <section class="attribute-section" aria-labelledby="attribute-title">
+            <div class="section-title">
+              <h3 id="attribute-title">Chỉnh kết quả thuộc tính caption</h3>
+              <span id="attribute-summary" class="muted"></span>
+            </div>
+            <div id="attribute-list" class="attribute-list"></div>
+          </section>
+
+          <div class="form-actions">
+            <button id="save-button" type="submit">Lưu nhãn đã chỉnh</button>
+            <p class="helper">Dữ liệu Gemini gốc không bị thay đổi. Để trống nghĩa là không ghi đè đánh giá Gemini.</p>
+          </div>
+        </form>
+      </section>
+      </div>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

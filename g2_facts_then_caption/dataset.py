@@ -64,7 +64,7 @@ def prediction_row(
         "sample_id": sample.sample_id,
         "method": "g2_facts_then_caption",
         "model_id": model,
-        "prompt_version": "visual_facts_caption_v1",
+        "prompt_version": "visual_facts_caption_v3",
         "latency_ms": round(latency_ms, 2),
         "status": "success" if error is None else "error",
     }

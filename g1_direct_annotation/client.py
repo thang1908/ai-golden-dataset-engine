@@ -44,7 +44,7 @@ def request_body(settings: Settings, image_data_url: str) -> dict[str, Any]:
         "stream": False,
         "temperature": 0,
         "max_tokens": settings.max_tokens,
-        "chat_template_kwargs": {"enable_thinking": False},
+        "chat_template_kwargs": {"enable_thinking": settings.enable_thinking},
         "response_format": {
             "type": "json_schema",
             "json_schema": {"name": "person_annotation", "schema": annotation_json_schema()},
@@ -143,6 +143,8 @@ class VllmClient:
             "stream": False,
             "temperature": 0,
             "max_tokens": self.settings.max_tokens,
+            # Translation is a short structured transformation; reasoning only adds latency and
+            # can make providers return non-JSON content in this strict schema path.
             "chat_template_kwargs": {"enable_thinking": False},
             "response_format": {"type": "json_schema", "json_schema": {"name": "caption_vietnamese", "schema": {"type": "object", "properties": {"caption_vi": {"type": "string", "minLength": 1, "maxLength": 500}}, "required": ["caption_vi"], "additionalProperties": False}}},
         }

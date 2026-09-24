@@ -15,8 +15,9 @@ It writes final results only—without metrics—to `output/g3/predictions.jsonl
 
 ```bash
 source .venv/bin/activate
-python -m g3_consensus_annotation
+python -m g3_consensus_annotation --workers 2
 ```
 
 The model defaults to `v-llm-v1-medium`; shared `VLLM_MODEL` is ignored.
-
+`--workers` defaults to `1`; use a small value because each image invokes six model
+calls. Completed rows are streamed safely to the one JSONL output file.

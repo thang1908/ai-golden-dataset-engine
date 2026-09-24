@@ -41,7 +41,7 @@ def test_direct_request_is_medium_and_has_complete_schema():
     schema = body["response_format"]["json_schema"]["schema"]
     assert DEFAULT_MODEL == "v-llm-v1-medium"
     assert body["model"] == DEFAULT_MODEL
-    assert body["chat_template_kwargs"] == {"enable_thinking": False}
+    assert body["chat_template_kwargs"] == {"enable_thinking": True}
     assert schema["required"] == ["caption", "attributes"]
     assert schema["properties"]["attributes"]["required"] == list(TAXONOMY)
     assert len(schema["properties"]["attributes"]["properties"]) == 21

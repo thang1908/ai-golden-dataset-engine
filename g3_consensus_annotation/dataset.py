@@ -64,7 +64,7 @@ def prediction_row(
         "sample_id": sample.sample_id,
         "method": "g3_consensus_annotation",
         "model_id": model,
-        "prompt_version": "four_run_consensus_v1",
+        "prompt_version": "four_run_consensus_v3",
         "latency_ms": round(latency_ms, 2),
         "status": "success" if error is None else "error",
     }

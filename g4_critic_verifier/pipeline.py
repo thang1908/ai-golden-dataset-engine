@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from .client import VllmClient
-from .errors import ResponseValidationError
+from .agents.nodes import critic_agent, generator_agent, verifier_agent, vietnamese_translation_agent
+from .errors import G4Error, ResponseValidationError
 from .prompts import critic_prompt, generator_prompt, verifier_prompt
 from .taxonomy import attribute_json_schema, validate_attributes
 from .translation import translate_caption
@@ -38,18 +39,49 @@ def _issues(value: dict[str, Any]) -> list[dict[str, str]]:
     return result
 
 
+def _stage(stage: str, operation):
+    try:
+        return operation()
+    except G4Error as exc:
+        raise ResponseValidationError(f"{stage}: {exc}") from exc
+
+
 def run(image: bytes, client: VllmClient, *, max_attempts: int = 3) -> dict[str, Any]:
     if max_attempts < 1:
         raise ValueError("max_attempts must be at least one")
     feedback: list[dict[str, str]] | None = None
+    last_draft: dict[str, Any] | None = None
+    last_notes: list[str] = []
     for _ in range(max_attempts):
-        draft = _annotation(client.complete(prompt=generator_prompt(feedback), schema_name="draft_annotation", schema=ANNOTATION_SCHEMA, image=image))
-        issues = _issues(client.complete(prompt=critic_prompt(draft), schema_name="critic_issues", schema=CRITIC_SCHEMA, image=image))
-        verification = client.complete(prompt=verifier_prompt(draft, issues), schema_name="verification", schema=VERIFIER_SCHEMA, image=image)
+        draft = _annotation(
+            _stage("generator", lambda: generator_agent(image, feedback, client, ANNOTATION_SCHEMA))
+        )
+        issues = _issues(_stage("critic", lambda: critic_agent(image, draft, client, CRITIC_SCHEMA)))
+        verification = _stage(
+            "verifier", lambda: verifier_agent(image, draft, issues, client, VERIFIER_SCHEMA)
+        )
         decision, reasons = verification.get("decision"), verification.get("reasons")
         if decision not in {"accept", "reject"} or not isinstance(reasons, list) or not all(isinstance(reason, str) and reason.strip() for reason in reasons):
             raise ResponseValidationError("Model returned an invalid verifier decision")
         if decision == "accept":
-            return {**draft, "caption_vi": translate_caption(client, draft["caption"])}
+            return {
+                **draft,
+                "caption_vi": _stage(
+                    "caption_vietnamese", lambda: vietnamese_translation_agent(draft["caption"], client)
+                ),
+                "workflow_status": "accepted",
+                "workflow_notes": [],
+            }
+        last_draft = draft
+        last_notes = [item["issue"] for item in issues] + [reason.strip() for reason in reasons]
         feedback = issues + [{"target": "verifier", "issue": reason.strip(), "suggested_correction": "Correct the unsupported claim."} for reason in reasons]
-    raise ResponseValidationError("Verifier rejected all bounded generation attempts")
+    if last_draft is None:
+        raise ResponseValidationError("No draft was generated")
+    return {
+        **last_draft,
+        "caption_vi": _stage(
+            "caption_vietnamese", lambda: vietnamese_translation_agent(last_draft["caption"], client)
+        ),
+        "workflow_status": "rejected_after_max_attempts",
+        "workflow_notes": last_notes,
+    }

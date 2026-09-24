@@ -29,6 +29,14 @@ def _dotenv(path: Path) -> dict[str, str]:
     return values
 
 
+def _boolean(value: str) -> bool:
+    if value.lower() in {"1", "true", "yes", "on"}:
+        return True
+    if value.lower() in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError("invalid boolean")
+
+
 @dataclass(frozen=True, slots=True)
 class Settings:
     base_url: str
@@ -39,6 +47,7 @@ class Settings:
     timeout_seconds: float = 120
     max_tokens: int = 1024
     max_retries: int = 3
+    enable_thinking: bool = True
 
     def __post_init__(self) -> None:
         if not self.base_url.startswith(("https://", "http://")):
@@ -79,8 +88,8 @@ def load_settings(
             timeout_seconds=float(value("VLLM_TIMEOUT_SECONDS", "120")),
             max_tokens=int(value("VLLM_MAX_TOKENS", "1024")),
             max_retries=int(value("VLLM_MAX_RETRIES", "3")),
+            enable_thinking=_boolean(value("VLLM_ENABLE_THINKING", "true")),
         )
     except ValueError as exc:
         raise ConfigurationError("G3 numeric configuration is invalid") from exc
-
 

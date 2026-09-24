@@ -120,3 +120,124 @@ remains the exact SigLIP-compatible vendored version from C1. There are no
 pagination, filtering, webhooks, streaming, uploads, or long-running-operation
 HTTP contracts in scope.
 
+## Gemini judge contract
+
+There is no new repository HTTP API. The only external call is the official
+`google-genai` Python SDK. The proposed adapter uses stateless
+`models.generate_content`: one review has all needed evidence in one request, so
+no conversation state, tool use, or agent is needed. It sends an inline query image
+and structured text context, requests JSON MIME output with a JSON Schema, then
+performs local Pydantic/semantic validation. Gemini errors or malformed content are
+redacted into an error row; raw provider bodies and API keys are never persisted.
+
+## Local dashboard delivery contract
+
+There is no REST/GraphQL API. The narrow loopback server exposes only approved
+paths to the local browser:
+
+| Browser path | Source | Purpose |
+|---|---|---|
+| `/dashboard/` | static UI assets | code entry and result rendering |
+| `/output/dashboard/index.json` | generated index | exact local lookup data |
+| `/sample/test/images/...` | mapped local image | browser-visible image bytes |
+
+The client-side lookup contract is an exact JSON object lookup by complete
+`person_key`. A missing key, missing field, unavailable index, or failed image load
+is a user-visible error state, not an alternate search. The browser makes no calls
+to V-LLM, Gemini, OAuth, or another network endpoint.
+
+## Legacy v1 local review API
+
+The loopback server adds no public API and no authentication layer; its endpoints
+are available only at the same local origin as the dashboard (BR-019).
+
+| Method | Path | Requirement | Purpose |
+|---|---|---|---|
+| `GET` | `/api/evaluations?sample_id={id}` | FR-026 | Return methods with latest source evaluation for an exact sample. |
+| `GET` | `/api/evaluation?sample_id={id}&method={g#}` | FR-027 | Return the complete latest source row plus any human overlay. |
+| `PUT` | `/api/review-override` | FR-028 | Validate then atomically save one human overlay for `(sample_id, method)`. |
+| `POST` | `/api/export-review` | FR-029 | Regenerate and return the local Excel review workbook. |
+
+`PUT /api/review-override` accepts only this shape (unknown fields are rejected):
+
+```json
+{
+  "sample_id": "2",
+  "method": "g1",
+  "caption": { "verdict": "minor_error", "note": "Human review note" },
+  "attributes": {
+    "footwear_type": { "verdict": "incorrect", "note": "Visible slippers" }
+  }
+}
+```
+
+This endpoint contract is retained only to document the existing v1 implementation.
+Valid caption verdicts are the existing caption labels from Gemini output; valid
+attribute verdicts are `correct`, `incorrect`, `not_visible`, `golden_needs_review`,
+and `not_applicable`. Read requests return 404 for a missing source evaluation.
+Invalid input returns 400, an unavailable/malformed source returns 500, and an
+exporter failure returns 500 without replacing the last successful workbook. Every
+write is local-only and affects the overlay artifact, never source data.
+
+## V2 Gemini judge and local review contracts (proposed)
+
+Gemini continues to receive a strict `response_json_schema`. It returns a caption
+branch with `is_correct`, `needs_human_review`, Vietnamese `note`, 21 `{mentioned,
+is_correct, note}` checks, and bounded `{claim, is_correct, note}` unmapped claims.
+It also returns 21 structured attribute `{is_correct, needs_human_review, note}`
+entries; the pipeline attaches immutable prediction/golden values before persistence.
+
+Local validation additionally enforces: an unmentioned field must be null; a false
+top-level caption must have at least one false evaluated claim; a true caption has no
+false evaluated claim; only booleans affect correctness denominators. The proposed
+v2 review `PUT` saves a human caption boolean/null plus note and optional known
+attribute boolean/null plus notes. Unknown keys or invalid combinations return 400;
+source evaluation rows remain immutable.
+
+The v2 dashboard `PUT` contract is deferred. This change exposes only
+`python -m AI_harness_evaluation` and its JSONL output contract.
+
+### V2 local review API (proposed)
+
+The existing loopback-only endpoints keep their paths but switch to v2 artifacts:
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/reviews?sample_id={id}` | Return latest v2 source rows plus optional v2 human overlay. |
+| `PUT` | `/api/reviews` | Validate and atomically save one v2 human overlay. |
+| `POST` | `/api/export` | Run the v2 exporter and return `evaluation_review_v2.xlsx`. |
+
+The PUT body is bounded and exact: identity, an optional human caption
+`is_correct`/note, and optional known attribute/caption-check corrections. Booleans
+and `null` are valid human results; omitted values mean no override. Invalid shapes,
+unknown taxonomy fields, or a missing source evaluation return 400. There is no
+authentication because the server is loopback-only and single-operator.
+
+### Isolated Gemini request contracts (proposed)
+
+Caption request content is image plus caption prompt and has a caption-only schema.
+Attribute request content is image plus attribute prompt and has an attribute-only
+schema. The pipeline combines only locally validated responses into the existing
+v2 envelope.
+
+## V3 isolated Gemini request contracts (proposed)
+
+Each task makes two strict-schema requests, with no shared prompt context:
+
+| Branch | Inputs crossing the Gemini boundary | Persisted branch |
+|---|---|---|
+| Caption factuality | image, generated English `caption` | `caption_evaluation` (`is_correct`, `needs_human_review`, Vietnamese `note`) |
+| Caption attribute match | generated English `caption`, golden 21-field object | `caption_attribute_evaluation` (21 `{mentioned, is_correct|null, note}` entries) |
+
+Local validation rejects unknown fields; enforces `mentioned=false` implies
+`is_correct=null`; and never derives one branch's boolean from another. Generated
+structured attributes are returned only as immutable prediction provenance. The local
+review endpoints retain their paths but move to v3 source/overlay/workbook paths and
+return the two branch objects separately.
+
+The local exporter also accepts a bounded method selector (`g3`, `g4`, or `g5`) or
+`--split`; split output produces one workbook per selected method. No method-specific
+workbook write changes the evaluation JSONL or human overlay contract.
+
+For the local CLI call sequence and per-node VLLM request contracts of the G3–G5
+generators, see [`g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation_guide.md).

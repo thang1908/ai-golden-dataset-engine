@@ -76,3 +76,94 @@ Primary cost is external model calls: approximately 1, 3, 6, up to 9, and at lea
 limits are the current controls. Prices, budgets, volume, concurrency, and latency
 targets are unknown (OQ-004); no fabricated capacity plan is provided.
 
+## Proposed review runtime
+
+The review builder is one local Python process with no network or credential
+dependency. It reads `sample/test` and `output/g#`, then writes only
+`output/review/annotation_comparison.xlsx`; it embeds only source-relative image
+paths, not copies of the images.
+
+## Gemini evaluator runtime
+
+The evaluator adds outbound TLS calls to Gemini. `GEMINI_API_KEY` comes from the
+environment or ignored `.env`; Google recommends a restricted/auth key. The only
+new dependency is `google-genai`; tests inject a fake transport and make no real
+Gemini call. Gemini limits are per project and include request/token dimensions,
+so workers are bounded and configuration exposes model, timeout, retry, and worker
+count. The SDK retries transient errors, so the adapter must not create an
+unbounded second retry loop. Quota and budget are OQ-009.
+
+## Proposed local dashboard runtime
+
+The dashboard adds one offline build step and one loopback browser session:
+
+1. Run `python tools/build_dashboard_index.py` after the authoritative
+   `captions_merged.csv` mapping changes.
+2. Run `python tools/serve_dashboard.py`, a narrow server bound to `127.0.0.1`.
+3. Open the dashboard in a local browser; it reads static assets, the generated
+   index, and local image files only.
+
+No new package, database, service account, credential, cloud resource, or outbound
+network rule is required. The server intentionally exposes only `/dashboard/`, the
+generated index, and `/sample/test/images/`; it does not serve the repository root
+or `.env`. The builder reports invalid mapping/file references to stderr and exits
+non-zero without writing a partial index. Browser console errors and visible UI
+states are sufficient observability for this local-only scope.
+
+## Proposed editable-review runtime
+
+The narrow loopback process gains write permission only for
+`output/dashboard/review_overrides.json` and the existing generated Excel output.
+It reads `output/evaluation/reviews.jsonl` on demand, validates bounded JSON input,
+writes overrides atomically, and runs the local Node exporter only when the
+operator explicitly selects Export. It continues to deny repository-root files,
+source TSV/JSONL, credentials, and external network paths.
+
+There is no background queue, automatic export, cloud storage, browser-side
+credential, or multi-user session. A failed save/export is reported in the browser
+and leaves the previous artifact intact. Local process stderr logs endpoint, status,
+and failure category but not captions, notes, images, or other payloads.
+
+## V2 runtime and operations (proposed)
+
+V2 reuses the existing local Python process, Gemini API-key configuration, bounded
+worker pool, per-request timeout, and retry policy. It adds no cloud service, queue,
+database, or browser credential. New v2 JSONL/overlay paths use existing atomic
+write conventions; the old review artifact is retained for rollback/read-only
+history. Logs expose only method, sample ID, status, latency, and redacted error
+class. The operator owns quota, retry, timeout, and local disk retention settings.
+
+No dashboard server, Node exporter, or browser asset is changed as part of the
+evaluator-only v2 implementation.
+
+### V2 consumer extension
+
+The existing loopback dashboard process and local Node runtime are reused. Their v2
+paths are limited to `reviews_v2.jsonl`, `review_overrides_v2.json`, and
+`evaluation_review_v2.xlsx`; `.env`, v1 review artifacts, source outputs, and test
+data remain blocked from browser serving/writes. Export has the existing bounded
+subprocess timeout and preserves the last workbook if a new export fails.
+
+### Isolated judge operations (proposed)
+
+Each task normally makes two Gemini requests. Existing worker, timeout, and retry
+settings bound the additional quota and latency; a worker runs caption then attribute
+judging so per-task failure/output behavior stays deterministic.
+
+### Two-branch v3 operations (approved)
+
+Each worker will make two bounded Gemini requests in order: caption factuality then
+caption-to-golden attribute match. Worker concurrency still applies across independent
+samples; a worker writes its validated v3 row immediately when both calls complete.
+This doubles the request count relative to the original v2 combined judge, so existing
+timeout, retry, worker, quota, and cost configuration applies to each branch
+independently. `reviews_v3.jsonl` and its v3 dashboard/export artifacts prevent
+completed v2 rows from suppressing v3 work under `--resume`; without `--resume`, the
+CLI deliberately starts a fresh v3 file.
+
+The local Node exporter may create three method-specific v3 workbooks in one explicit
+operator command. It is bounded by local disk and Node process limits; all inputs are
+local JSONL/overlay data and no network or model call occurs.
+
+The request-count formulas and worker/concurrency behavior for G3–G5 generation
+are documented in [`g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation_guide.md).

@@ -59,7 +59,11 @@ class VllmClient:
             "stream": False,
             "temperature": 0,
             "max_tokens": self.settings.max_tokens,
-            "chat_template_kwargs": {"enable_thinking": False},
+            # Keep translation/schema-only calls deterministic; vision/reasoning stages still use
+            # the shared VLLM_ENABLE_THINKING setting.
+            "chat_template_kwargs": {
+                "enable_thinking": self.settings.enable_thinking and schema_name != "caption_vietnamese"
+            },
             "response_format": {"type": "json_schema", "json_schema": {"name": schema_name, "schema": schema}},
         }
         response: httpx.Response | None = None
@@ -95,4 +99,3 @@ class VllmClient:
             except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
                 raise ResponseValidationError("Model returned invalid structured JSON") from exc
         raise ApiError("Chat Completions request failed after retries")
-

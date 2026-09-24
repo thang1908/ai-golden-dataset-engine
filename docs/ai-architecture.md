@@ -72,7 +72,7 @@ does not expose a score.
 Generator produces a full draft. Critic sees image + draft and lists concrete
 unsupported, missing, or taxonomy-inconsistent claims. Verifier independently
 sees image, draft, and critique and chooses accept/reject with reasons. Reject feeds
-issues into regeneration. Proposed maximum: three generator attempts. If no draft
+issues into regeneration. Configured default maximum: 20 generator attempts. If no draft
 is accepted, the run fails with `WorkflowExhaustedError`; it does not label the
 latest rejected draft as final.
 
@@ -82,7 +82,7 @@ A full draft is produced. A question generator converts caption claims and
 attribute choices into bounded, uniquely identified verification questions. An
 image-grounded answer stage answers only those questions. A comparator returns
 accept or a complete corrected annotation. A refined draft begins the next round.
-Proposed maximum: two refinement rounds. Exhaustion fails rather than publishing a
+Configured default maximum: 20 refinement rounds. Exhaustion fails rather than publishing a
 non-accepted draft.
 
 ## Prompt and contract versioning
@@ -123,3 +123,101 @@ then compare identical final contracts across flows using caption and per-attrib
 metrics. Thresholds, release gates, drift monitoring, and feedback ingestion are
 explicitly deferred until that phase is requested.
 
+## Review workspace boundary
+
+The spreadsheet review workspace contains no AI/evaluator/judge/metric. It only
+places current golden data beside existing predictions in a workbook for operator
+inspection. The separate evaluator below is an optional JSONL-producing package.
+
+## Gemini multimodal judge
+
+For each successful prediction, Gemini receives the exact query image, the matching
+human-labeled `attributes.tsv` row, generated caption/attributes, and the caption
+and attribute rubrics. It must return structured caption Level 0–3, claim errors,
+21 field verdicts, and `needs_human_review`. The image remains final visual
+evidence when a label and crop conflict.
+
+The official Python SDK is `google-genai`. Gemini supports image multimodal input
+and structured JSON, but its schema is only a supported subset and Google advises
+application-side validation; local validation is therefore mandatory. The exact
+model defaults to `gemini-2.5-pro` and remains configurable as `GEMINI_MODEL`.
+Provider references:
+[image understanding](https://ai.google.dev/gemini-api/docs/image-understanding)
+and [structured output](https://ai.google.dev/gemini-api/docs/structured-output).
+
+The judge is stateless `models.generate_content`, not an agent. Image bytes and
+golden attributes cross the Gemini trust boundary. No raw image data, API key, or
+raw response is logged; judge output never modifies source data.
+
+## Dashboard boundary
+
+The local image-lookup dashboard uses no AI component. It only renders the existing
+image path established from dataset metadata. This separation prevents a visual
+inspection aid from changing model outputs, invoking a model, or inferring an image
+identity from its pixels.
+
+## Human review extension boundary
+
+The editable dashboard adds no AI call or new judgment model. It displays stored
+Gemini review evidence and records an explicitly human-labeled override. The export
+shows machine and human values separately, so no manual action is fed into prompt
+generation, Gemini evaluation, or golden-label mutation.
+
+## Factuality-first Gemini evaluator v2 (proposed)
+
+The evaluator remains one stateless multimodal Gemini call, not an agent: input is
+the exact image, generated English caption, 21 generated attributes, and matching 21
+golden attributes. It judges claims actually made by the caption—not how much of the
+image the caption covers. For each taxonomy field it returns whether the caption
+mentions it; omission yields `mentioned=false, is_correct=null`. A separate
+unmapped-claim list captures non-taxonomy claims such as person count.
+
+Generated attributes are judged separately as true/false/null against image and
+golden evidence. Null means evidence is insufficient/conflicting, never a failure.
+Prompt version becomes `gemini_factuality_v2_vi`; provider JSON-schema enforcement
+is followed by local semantic validation. Metrics are caption factuality pass rate,
+evaluated-claim accuracy, mention coverage, attribute accuracy, and unresolved rate;
+coverage is descriptive only.
+
+This is a judge-contract replacement only. The evaluator consumes persisted G1–G5
+results and never invokes a generator or writes into a G-flow output folder.
+
+### V2 review consumers
+
+Dashboard and Excel are passive local consumers of validated Gemini v2 JSONL. They
+never invoke Gemini, V-LLM, or a judge. A human overlay is provenance separate from
+AI evaluation, so corrections cannot affect prompt context, scoring, or source
+predictions in a later evaluator run.
+
+### Isolated factuality judgments (proposed)
+
+Caption factuality is image-plus-caption claim grounding; golden labels and generated
+attributes are excluded to avoid leaking taxonomy expectations. Attribute verification
+is a separate image-plus-reference comparison. This doubles normal judge calls but
+gives caption true/false a clear meaning.
+
+## Two independent evaluator products v3 (approved)
+
+The evaluator will use two stateless Gemini calls per persisted prediction:
+
+1. **Caption factuality** receives only image plus English caption. Its boolean says
+   whether the caption makes any unsupported or contradicted visual claim. It does
+   not measure completeness.
+2. **Caption-to-golden attribute matching** receives only English caption plus the
+   exact golden 21-field object. It extracts which taxonomy claims the caption makes
+   and labels each mentioned claim true/false/null. This is a reference-consistency
+   product, not an image judge.
+All prompts require Vietnamese notes and strict JSON. A local validator owns the
+21-field set and tri-state rules. The two results are stored side by side without
+cross-branch aggregation. Generated structured attributes remain read-only prediction
+provenance and are not scored in this evaluator version.
+
+Method-specific Excel workbooks are presentation artifacts only. They expose the
+caption factuality branch and all caption-to-golden attribute checks but do not call
+Gemini or feed values back to a generator or judge.
+
+## G3–G5 code-level flow reference
+
+[`g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation_guide.md)
+documents the exact observed Python orchestration, in-memory state, prompts,
+structured outputs, retries, and call-count bounds for G3, G4, and G5.

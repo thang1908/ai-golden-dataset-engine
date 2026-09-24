@@ -21,9 +21,11 @@ Run:
 
 ```bash
 source .venv/bin/activate
-python -m g2_facts_then_caption
+python -m g2_facts_then_caption --workers 3
 ```
 
 Optional overrides are `--test-dir`, `--output-dir`, `--dotenv`, and non-secret
 connection/model/retry flags. The model is not called by tests.
 
+`--workers` defaults to `1`; rows are streamed to JSONL by the main process as
+individual images finish, so their order can differ from the input order.

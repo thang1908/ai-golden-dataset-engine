@@ -30,7 +30,8 @@ G1 always defaults to `v-llm-v1-medium` and deliberately ignores shared
 
 ```bash
 python3 -m g1_direct_annotation \
-  --output-dir output/g1
+  --output-dir output/g1 \
+  --workers 3
 ```
 
 `--test-dir` is optional and defaults to the external sample above. Then open
@@ -38,5 +39,9 @@ python3 -m g1_direct_annotation \
 sample captions and `attributes.tsv`. A per-image provider failure is retained as a
 JSONL row with `status: "error"`; successful rows always contain a caption and all
 21 validated attributes.
+
+`--workers` defaults to `1`. With a larger value, each worker processes one image
+independently and the main process appends rows as jobs finish, so JSONL order may
+vary but `sample_id` is retained and rows cannot overwrite one another.
 
 The model is not invoked by unit tests.
