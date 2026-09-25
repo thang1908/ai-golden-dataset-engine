@@ -33,7 +33,9 @@ def critic_prompt(draft: dict[str, Any]) -> str:
         "taxonomy-invalid claims as issues. Also report a material caption omission when a clearly "
         "visible age/gender presentation, hair, clothing, footwear, bag, or accessory is present "
         "in the image but absent from the caption. Do not require uncertain details and do not score "
-        "it.\nDraft:\n"
+        "it. Return exactly one JSON object with the key `issues`; an empty result is valid and "
+        "must be `{" + '"issues":[]' + "}`. Do not include Markdown, explanations, or any text "
+        "outside that JSON object.\nDraft:\n"
         + json.dumps(draft, ensure_ascii=False)
     )
 

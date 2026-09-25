@@ -17,7 +17,7 @@
 | ADR-011 | Factuality-first, nullable AI Harness evaluation v2 | Proposed |
 | ADR-012 | Local dashboard and Excel consume evaluation v2 separately | Proposed |
 | ADR-013 | Isolate caption factuality from attribute reference context | Proposed |
-| ADR-016 | Local client-boundary telemetry for generation benchmark | Accepted |
+| ADR-016 | Per-case request/token fields with terminal progress logging | Accepted |
 
 ## ADR-001: Five independent vertical flow packages
 
@@ -36,7 +36,7 @@
 
 ## ADR-002: Plain synchronous Python orchestration
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-09-22
 - Context: flows are linear or bounded loops for one image (FR-003–007, NFR-007).
 - Decision: implement explicit functions and loops, executing G3 observers
@@ -159,7 +159,7 @@ rate-limit boundary. Exact model and manifest availability are blocking OQ-009�
 
 - Status: Proposed
 - Date: 2026-09-24
-- Owner: pending user approval
+- Owner: generation workflow maintainers
 - Context: Minor/major caption severity is subjective and penalizes a caption that
   is accurate but concise. The user requires true/false factuality, a Vietnamese
   judge note, and a non-penalizing state for caption attributes that were never
@@ -256,19 +256,20 @@ This is a descriptive reference, not a new ADR: future changes to loop semantics
 dataset mapping, or observability still require an explicit decision where they
 change approved behavior.
 
-## ADR-016: Local client-boundary telemetry for generation benchmark
+## ADR-016: Per-case request/token fields with terminal progress logging
 
 - Status: Proposed
 - Date: 2026-09-24
 - Owner: pending user approval
-- Context: mentor needs request and token reporting for G3–G5. Pipeline-level
-  timing cannot count retry attempts or provider usage reliably (FR-048–051).
-- Decision: write one privacy-safe local JSONL event for each VLLM HTTP attempt at
-  the package-local client boundary; build Markdown/CSV aggregates offline. Distinguish
-  logical calls from actual requests, and retain provider token fields only when present.
-- Alternatives: infer counts from workflow topology; add Langfuse/LangSmith now;
-  estimate tokens with a local tokenizer. These either miss retries, add an external
-  dependency, or create unverified token values.
-- Consequences: accurate local benchmark evidence with small code changes in three
-  packages; no hosted observability UI. Exact token totals remain conditional on
-  OQ-023, and monetary cost remains conditional on OQ-024.
+- Context: mentor needs simple per-case request and token fields for all G1–G5,
+  immediately in prediction output, while the user prefers terminal logs over files
+  (FR-048–051).
+- Decision: maintain an in-memory, thread-safe counter at each package's VLLM client
+  boundary. Attach `input_token`, `output_token`, `num_request`, `num_retry`, and
+  `num_error_request` to the final prediction row; print safe per-request progress to
+  the terminal. Do not write request-event JSONL.
+- Alternatives: retain detailed request-event JSONL; use hosted Langfuse/LangSmith;
+  pipeline timers only. The first is more detailed but conflicts with the requested
+  output/log simplicity; hosted tools add a dependency; timers miss retries.
+- Consequences: concise outputs and no telemetry artifacts; node-level historical
+  retry diagnosis is no longer retained. Exact token values remain conditional on OQ-023.

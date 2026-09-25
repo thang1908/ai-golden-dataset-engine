@@ -224,9 +224,8 @@ structured outputs, retries, and call-count bounds for G3, G4, and G5.
 
 ## Generation observability
 
-Per-node telemetry will measure calls at the VLLM client boundary, where it can
-separate logical calls from retry attempts and capture provider-reported usage
-without logging prompt/image content. This is observability only: it does not score,
-rank, select, or alter any generated annotation. Token values remain unknown when
-the provider does not return `usage` (OQ-023). Full design:
-[`generation_benchmark_telemetry_design.md`](generation_benchmark_telemetry_design.md).
+Each VLLM client tracks per-case request count and provider-reported usage at the
+client boundary. It does not score, rank, select, or alter generated annotations.
+The final prediction receives `input_token`, `output_token`, `num_request`,
+`num_retry`, and `num_error_request`; tokens remain `null` when the provider does
+not return `usage` (OQ-023).

@@ -348,20 +348,23 @@ generators, see [`g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation
 That document is an observed-code reference; it does not alter the architecture
 requirements in this document.
 
-## Generation benchmark telemetry (proposed)
+## Per-case generation counters
 
 ```mermaid
 flowchart LR
-  N["G3/G4/G5 node"] --> C["VllmClient"]
+  N["G1–G5 node"] --> C["VllmClient"]
   C --> V["VLLM completion"]
-  C --> T["Local request_events.jsonl"]
-  T --> B["Benchmark report builder"]
-  P["predictions.jsonl"] --> B
-  B --> R["Markdown + CSV report"]
+  C --> T["Thread-safe in-memory counter"]
+  T --> P["predictions.jsonl\ninput_token / output_token\nnum_request / num_retry / num_error_request"]
+  C --> L["Safe terminal progress line"]
 ```
 
-Telemetry is a local append-only side artifact (FR-048–051), not a queue, database
-or third-party observability service. It records one event per HTTP attempt at the
-client boundary, so retry accounting remains accurate. The detailed event contract,
-privacy boundary and failure behavior are in
-[`generation_benchmark_telemetry_design.md`](generation_benchmark_telemetry_design.md).
+Each flow holds a thread-safe in-memory counter for the active case (FR-048–051).
+The VLLM client increments `num_request` for every model HTTP attempt, including a
+retry; tracks retries in `num_retry`; tracks failed HTTP, transport, or response-parse
+attempts in `num_error_request`; and adds provider-reported input/output usage when
+available. When the case finishes, its five aggregate fields are attached to the final
+prediction JSONL row.
+The client prints a safe progress line to the terminal; no per-request log file is
+written. This deliberately avoids a queue, database and third-party observability
+service.

@@ -325,15 +325,16 @@ including node inputs, call counts, retry behavior, loop limits, and output stat
 
 | ID | Requirement | Acceptance condition |
 |---|---|---|
-| FR-048 | Record one local telemetry event for every VLLM HTTP attempt made by G3, G4, or G5. | Event includes run, sample, method, stage, attempt, HTTP outcome and latency; no prompt, image, token, or raw response is persisted. |
-| FR-049 | Distinguish logical model calls from actual HTTP requests including retries. | Benchmark report shows both counts per method and stage. |
-| FR-050 | Persist provider token usage only when supplied by the response. | Report shows input/output/total tokens and token coverage; missing usage is `N/A`, never estimated as fact. |
-| FR-051 | Build a local Markdown/CSV benchmark report from telemetry plus predictions. | Report contains case success/error, requests, retries, token coverage and P50/P95 latency by method/stage. |
+| FR-048 | Add `input_token`, `output_token`, `num_request`, `num_retry`, and `num_error_request` to every final prediction row emitted by G1–G5. | A completed or failed case is immediately written with all five fields; requests, retries and failed attempts are distinguishable. |
+| FR-049 | Calculate the three fields at the VLLM client boundary, not from a prompt estimate. | `input_token` and `output_token` use provider `usage` when present; values are `null` when no provider usage is available. |
+| FR-050 | Emit concise request progress to the terminal instead of persisting request-event log files. | One terminal line identifies method, sample, stage, request number, outcome and available token usage; it contains no prompt, image, credential or raw provider response. |
+| FR-051 | Keep output compatible with existing caption/attribute consumers. | Existing fields and JSONL write ordering remain unchanged; only the five new top-level fields are added. |
 
 | ID | Rule |
 |---|---|
 | BR-031 | Telemetry must not persist prompts, Base64 image, OAuth credentials, bearer tokens or raw model responses. |
 | BR-032 | A retry creates another actual-request event but retains the same logical-call identity. |
 | BR-033 | OAuth refreshes are outside model-request/token metrics unless explicitly requested. |
+| BR-034 | `num_request` is every VLLM model HTTP attempt; `num_retry` counts attempts after the first attempt of a logical model call; `num_error_request` counts attempts whose final HTTP/transport/response-parse outcome is unsuccessful. |
 
 No price/currency metric is in scope without an authoritative provider price card (OQ-024).

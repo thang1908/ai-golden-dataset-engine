@@ -27,7 +27,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-attempts", type=int, default=20)
     parser.add_argument("--max-retries", type=int, dest="VLLM_MAX_RETRIES")
     parser.add_argument("--workers", type=int, default=1, help="Maximum images processed concurrently (default: 1)")
-    parser.add_argument("--telemetry-dir", type=Path, default=ROOT / "output" / "telemetry")
     parser.add_argument("--run-id", help="Identifier shared by prediction rows and request telemetry")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.WARNING)
@@ -39,10 +38,9 @@ def main(argv: list[str] | None = None) -> int:
         samples = load_query_samples(args.test_dir)
         target = args.output_dir / "predictions.jsonl"
         run_id = args.run_id or default_run_id("g4")
-        telemetry_path = args.telemetry_dir / run_id / "g4_request_events.jsonl"
         target.parent.mkdir(parents=True, exist_ok=True)
         success = 0
-        with target.open("w", encoding="utf-8") as output, TelemetryWriter(telemetry_path) as telemetry, VllmClient(settings, telemetry=telemetry) as client:
+        with target.open("w", encoding="utf-8") as output, TelemetryWriter() as telemetry, VllmClient(settings, telemetry=telemetry) as client:
             worker = lambda sample: generate_dataset(
                 [sample],
                 lambda image, sample_id, telemetry_run_id: run(image, client, max_attempts=args.max_attempts, sample_id=sample_id, run_id=telemetry_run_id),
@@ -55,7 +53,7 @@ def main(argv: list[str] | None = None) -> int:
                 output.flush()
                 os.fsync(output.fileno())
                 success += row["status"] == "success"
-        print(f"G4 generated {success}/{len(samples)} predictions: {target}\nrun_id: {run_id}\nrequest telemetry: {telemetry_path}")
+        print(f"G4 generated {success}/{len(samples)} predictions: {target}\nrun_id: {run_id}")
         return 0 if success == len(samples) else 1
     except (G4Error, OSError, ValueError) as exc:
         print(f"G4 error: {exc}", file=sys.stderr)

@@ -13,6 +13,7 @@ from .dataset import generate_dataset, load_query_samples
 from .errors import G1Error
 from .output import json_line, write_atomically
 from .parallel import bounded_parallel
+from .telemetry import CallContext, CaseMetrics
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TEST_DIR = REPOSITORY_ROOT / "sample" / "test"
@@ -70,13 +71,12 @@ def main(argv: list[str] | None = None) -> int:
         target.parent.mkdir(parents=True, exist_ok=True)
         succeeded = 0
         with target.open("w", encoding="utf-8") as output, VllmClient(settings) as client:
-            def annotate(image: bytes):
-                annotation = direct_annotation_agent(image, client)
-                return {
-                    **annotation,
-                    "caption_vi": vietnamese_translation_agent(annotation["caption"], client),
-                }
-            worker = lambda sample: generate_dataset([sample], annotate, model=settings.model)[0]
+            def worker(sample):
+                metrics = CaseMetrics(sample.sample_id)
+                def annotate(image: bytes):
+                    annotation = direct_annotation_agent(image, client, metrics, CallContext(sample.sample_id, "annotation"))
+                    return {**annotation, "caption_vi": vietnamese_translation_agent(annotation["caption"], client, metrics, CallContext(sample.sample_id, "caption_vietnamese"))}
+                return generate_dataset([sample], annotate, model=settings.model, metrics_for_sample=lambda _: metrics.summary())[0]
             for row in bounded_parallel(samples, worker, args.workers):
                 output.write(json_line(row))
                 output.flush()

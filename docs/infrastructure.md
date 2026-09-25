@@ -170,10 +170,10 @@ are documented in [`g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementati
 
 ## Local benchmark telemetry
 
-The existing local process writes telemetry JSONL to its run directory; no external
-collector, queue, database, Langfuse or LangSmith is required. A lock protects
-concurrent worker append operations. This introduces local disk growth proportional
-to HTTP attempts, while preserving retry/accounting evidence if a run terminates.
+The local process prints one safe progress line per VLLM HTTP attempt and stores only
+the final per-case token/request/retry/error counters in `predictions.jsonl`; no external collector, queue,
+database, Langfuse, LangSmith, or local request-event file is required. A lock
+protects concurrent worker counter updates.
 Token totals depend on provider `usage` availability (OQ-023); monetary cost needs
 an approved price card (OQ-024). See
 [`generation_benchmark_telemetry_design.md`](generation_benchmark_telemetry_design.md).

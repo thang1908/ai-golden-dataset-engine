@@ -13,6 +13,7 @@ from .errors import G2Error
 from .output import json_line, write_atomically
 from .parallel import bounded_parallel
 from .pipeline import run
+from .telemetry import CaseMetrics
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TEST_DIR = REPOSITORY_ROOT / "sample" / "test"
@@ -70,9 +71,12 @@ def main(argv: list[str] | None = None) -> int:
         target.parent.mkdir(parents=True, exist_ok=True)
         succeeded = 0
         with target.open("w", encoding="utf-8") as output, VllmClient(settings) as client:
-            worker = lambda sample: generate_dataset(
-                [sample], lambda image: run(image, client), model=settings.model
-            )[0]
+            def worker(sample):
+                metrics = CaseMetrics(sample.sample_id)
+                return generate_dataset(
+                    [sample], lambda image: run(image, client, metrics=metrics, sample_id=sample.sample_id),
+                    model=settings.model, metrics_for_sample=lambda _: metrics.summary(),
+                )[0]
             for row in bounded_parallel(samples, worker, args.workers):
                 output.write(json_line(row))
                 output.flush()

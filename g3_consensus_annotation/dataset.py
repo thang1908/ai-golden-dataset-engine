@@ -73,7 +73,7 @@ def prediction_row(
     if run_id is not None:
         row["run_id"] = run_id
     if telemetry is not None:
-        row["generation_metrics"] = telemetry
+        row.update(telemetry)
     if annotation is not None:
         row["caption"] = annotation["caption"]
         row["caption_vi"] = annotation["caption_vi"]

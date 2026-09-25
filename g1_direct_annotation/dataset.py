@@ -58,6 +58,7 @@ def prediction_row(
     *,
     model: str,
     latency_ms: float,
+    metrics: dict[str, int | None] | None = None,
     error: str | None = None,
     error_code: str = "generation_failed",
 ) -> dict[str, Any]:
@@ -69,6 +70,8 @@ def prediction_row(
         "latency_ms": round(latency_ms, 2),
         "status": "success" if error is None else "error",
     }
+    if metrics is not None:
+        row.update(metrics)
     if annotation is not None:
         row["caption"] = annotation["caption"]
         row["caption_vi"] = annotation["caption_vi"]
@@ -78,7 +81,7 @@ def prediction_row(
     return row
 
 
-def generate_dataset(samples: list[TestSample], annotate, *, model: str) -> list[dict[str, Any]]:
+def generate_dataset(samples: list[TestSample], annotate, *, model: str, metrics_for_sample=None) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for sample in samples:
         started = time.perf_counter()
@@ -90,6 +93,7 @@ def generate_dataset(samples: list[TestSample], annotate, *, model: str) -> list
                     annotation,
                     model=model,
                     latency_ms=(time.perf_counter() - started) * 1000,
+                    metrics=metrics_for_sample(sample.sample_id) if metrics_for_sample else None,
                 )
             )
         except G1Error as exc:
@@ -99,6 +103,7 @@ def generate_dataset(samples: list[TestSample], annotate, *, model: str) -> list
                     None,
                     model=model,
                     latency_ms=(time.perf_counter() - started) * 1000,
+                    metrics=metrics_for_sample(sample.sample_id) if metrics_for_sample else None,
                     error=str(exc),
                     error_code=type(exc).__name__.replace("Error", "").lower() or "generation_failed",
                 )
@@ -110,6 +115,7 @@ def generate_dataset(samples: list[TestSample], annotate, *, model: str) -> list
                     None,
                     model=model,
                     latency_ms=(time.perf_counter() - started) * 1000,
+                    metrics=metrics_for_sample(sample.sample_id) if metrics_for_sample else None,
                     error="An unexpected local generation error occurred",
                 )
             )

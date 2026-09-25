@@ -13,6 +13,7 @@ from .errors import ApiError, ResponseValidationError
 from .image import to_data_url
 from .prompts import annotation_prompt
 from .taxonomy import attribute_json_schema, validate_attributes
+from .telemetry import CallContext, CaseMetrics
 
 RETRYABLE_STATUS_CODES = {408, 409, 429, 500, 502, 503, 504}
 
@@ -61,6 +62,13 @@ def _delay(response: httpx.Response | None, attempt: int) -> float:
     return min(8.0, 0.5 * (2**attempt))
 
 
+def _usage(payload: Any) -> tuple[int | None, int | None]:
+    usage = payload.get("usage") if isinstance(payload, dict) else None
+    if not isinstance(usage, dict):
+        return None, None
+    return (int(usage["prompt_tokens"]) if isinstance(usage.get("prompt_tokens"), (int, float)) else None, int(usage["completion_tokens"]) if isinstance(usage.get("completion_tokens"), (int, float)) else None)
+
+
 def parse_annotation(response: httpx.Response) -> dict[str, Any]:
     try:
         content = response.json()["choices"][0]["message"]["content"]
@@ -100,11 +108,12 @@ class VllmClient:
     def __exit__(self, *_: object) -> None:
         self.close()
 
-    def annotate(self, image: bytes) -> dict[str, Any]:
+    def annotate(self, image: bytes, metrics: CaseMetrics | None = None, context: CallContext | None = None) -> dict[str, Any]:
         response: httpx.Response | None = None
         refresh = False
         body = request_body(self.settings, to_data_url(image))
         for attempt in range(self.settings.max_retries):
+            number = attempt + 1
             try:
                 token = self._tokens.get(force_refresh=refresh)
                 refresh = False
@@ -117,11 +126,18 @@ class VllmClient:
                     json=body,
                 )
             except httpx.HTTPError as exc:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="transport_error", input_token=None, output_token=None)
                 if attempt + 1 == self.settings.max_retries:
                     raise ApiError("Chat Completions request failed after retries") from exc
                 self._sleep(_delay(None, attempt))
                 continue
+            try:
+                payload: Any = response.json()
+            except (ValueError, TypeError):
+                payload = None
+            input_token, output_token = _usage(payload)
             if response.status_code == 401 and attempt + 1 < self.settings.max_retries:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="http_error", input_token=input_token, output_token=output_token)
                 self._tokens.invalidate()
                 refresh = True
                 continue
@@ -129,14 +145,22 @@ class VllmClient:
                 response.status_code in RETRYABLE_STATUS_CODES
                 and attempt + 1 < self.settings.max_retries
             ):
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="http_error", input_token=input_token, output_token=output_token)
                 self._sleep(_delay(response, attempt))
                 continue
             if response.status_code >= 400:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="http_error", input_token=input_token, output_token=output_token)
                 raise ApiError(f"Chat Completions request failed with HTTP {response.status_code}")
-            return parse_annotation(response)
+            try:
+                value = parse_annotation(response)
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="success", input_token=input_token, output_token=output_token)
+                return value
+            except ResponseValidationError:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="response_parse_error", input_token=input_token, output_token=output_token)
+                raise
         raise ApiError("Chat Completions request failed after retries")
 
-    def translate_caption(self, caption: str) -> str:
+    def translate_caption(self, caption: str, metrics: CaseMetrics | None = None, context: CallContext | None = None) -> str:
         body = {
             "model": self.settings.model,
             "messages": [{"role": "user", "content": [{"type": "text", "text": "Translate this factual person-image caption into natural Vietnamese. Preserve only stated facts. Return only JSON.\nEnglish caption:\n" + caption}]}],
@@ -151,26 +175,38 @@ class VllmClient:
         response: httpx.Response | None = None
         refresh = False
         for attempt in range(self.settings.max_retries):
+            number = attempt + 1
             try:
                 token = self._tokens.get(force_refresh=refresh)
                 refresh = False
                 response = self._client.post(f"{self.settings.service_url}/v1/chat/completions", headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, json=body)
             except httpx.HTTPError as exc:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="transport_error", input_token=None, output_token=None)
                 if attempt + 1 == self.settings.max_retries:
                     raise ApiError("Chat Completions request failed after retries") from exc
                 self._sleep(_delay(None, attempt)); continue
+            try:
+                payload: Any = response.json()
+            except (ValueError, TypeError):
+                payload = None
+            input_token, output_token = _usage(payload)
             if response.status_code == 401 and attempt + 1 < self.settings.max_retries:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="http_error", input_token=input_token, output_token=output_token)
                 self._tokens.invalidate(); refresh = True; continue
             if response.status_code in RETRYABLE_STATUS_CODES and attempt + 1 < self.settings.max_retries:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="http_error", input_token=input_token, output_token=output_token)
                 self._sleep(_delay(response, attempt)); continue
             if response.status_code >= 400:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="http_error", input_token=input_token, output_token=output_token)
                 raise ApiError(f"Chat Completions request failed with HTTP {response.status_code}")
             try:
-                value = json.loads(response.json()["choices"][0]["message"]["content"])
+                value = json.loads(payload["choices"][0]["message"]["content"])
                 caption_vi = value.get("caption_vi") if isinstance(value, dict) and set(value) == {"caption_vi"} else None
                 if not isinstance(caption_vi, str) or not (caption_vi := caption_vi.strip()) or len(caption_vi) > 500:
                     raise ValueError
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="success", input_token=input_token, output_token=output_token)
                 return caption_vi
             except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="response_parse_error", input_token=input_token, output_token=output_token)
                 raise ResponseValidationError("Model returned an invalid Vietnamese caption") from exc
         raise ApiError("Chat Completions request failed after retries")

@@ -11,6 +11,7 @@ from .auth import TokenProvider
 from .config import Settings
 from .errors import ApiError, ResponseValidationError
 from .image import to_data_url
+from .telemetry import CallContext, CaseMetrics
 
 RETRYABLE_STATUS_CODES = {408, 409, 429, 500, 502, 503, 504}
 
@@ -22,6 +23,13 @@ def _delay(response: httpx.Response | None, attempt: int) -> float:
         except ValueError:
             pass
     return min(8.0, 0.5 * (2**attempt))
+
+
+def _usage(payload: Any) -> tuple[int | None, int | None]:
+    usage = payload.get("usage") if isinstance(payload, dict) else None
+    if not isinstance(usage, dict):
+        return None, None
+    return (int(usage["prompt_tokens"]) if isinstance(usage.get("prompt_tokens"), (int, float)) else None, int(usage["completion_tokens"]) if isinstance(usage.get("completion_tokens"), (int, float)) else None)
 
 
 class VllmClient:
@@ -48,7 +56,7 @@ class VllmClient:
         self.close()
 
     def complete(
-        self, *, prompt: str, schema_name: str, schema: dict[str, Any], image: bytes | None = None
+        self, *, prompt: str, schema_name: str, schema: dict[str, Any], image: bytes | None = None, metrics: CaseMetrics | None = None, context: CallContext | None = None
     ) -> dict[str, Any]:
         content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
         if image is not None:
@@ -69,6 +77,7 @@ class VllmClient:
         response: httpx.Response | None = None
         refresh = False
         for attempt in range(self.settings.max_retries):
+            number = attempt + 1
             try:
                 token = self._tokens.get(force_refresh=refresh)
                 refresh = False
@@ -78,24 +87,35 @@ class VllmClient:
                     json=body,
                 )
             except httpx.HTTPError as exc:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="transport_error", input_token=None, output_token=None)
                 if attempt + 1 == self.settings.max_retries:
                     raise ApiError("Chat Completions request failed after retries") from exc
                 self._sleep(_delay(None, attempt))
                 continue
+            try:
+                payload: Any = response.json()
+            except (ValueError, TypeError):
+                payload = None
+            input_token, output_token = _usage(payload)
             if response.status_code == 401 and attempt + 1 < self.settings.max_retries:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="http_error", input_token=input_token, output_token=output_token)
                 self._tokens.invalidate()
                 refresh = True
                 continue
             if response.status_code in RETRYABLE_STATUS_CODES and attempt + 1 < self.settings.max_retries:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="http_error", input_token=input_token, output_token=output_token)
                 self._sleep(_delay(response, attempt))
                 continue
             if response.status_code >= 400:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="http_error", input_token=input_token, output_token=output_token)
                 raise ApiError(f"Chat Completions request failed with HTTP {response.status_code}")
             try:
-                value = json.loads(response.json()["choices"][0]["message"]["content"])
+                value = json.loads(payload["choices"][0]["message"]["content"])
                 if not isinstance(value, dict):
                     raise ValueError
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="success", input_token=input_token, output_token=output_token)
                 return value
             except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
+                if metrics and context: metrics.record(context, http_attempt=number, outcome="response_parse_error", input_token=input_token, output_token=output_token)
                 raise ResponseValidationError("Model returned invalid structured JSON") from exc
         raise ApiError("Chat Completions request failed after retries")

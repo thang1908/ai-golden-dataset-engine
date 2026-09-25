@@ -1,5 +1,10 @@
 # Thiết kế telemetry benchmark cho G3–G5
 
+> **Trạng thái: Superseded.** Thiết kế request-event JSONL trong tài liệu này đã
+> được thay bằng ADR-016: G1–G5 in progress ra terminal và ghi trực tiếp
+> `input_token`, `output_token`, `num_request`, `num_retry`,
+> `num_error_request` vào từng prediction row. Không còn tạo request-event log file.
+
 ## 1. Mục tiêu
 
 Mentor cần một báo cáo đáng tin cậy về chi phí và số lần gọi model khi chạy generation. Thiết kế này thêm telemetry local để trả lời theo từng run, method, node và case:

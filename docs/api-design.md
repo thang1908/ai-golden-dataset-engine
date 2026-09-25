@@ -242,11 +242,15 @@ workbook write changes the evaluation JSONL or human overlay contract.
 For the local CLI call sequence and per-node VLLM request contracts of the G3–G5
 generators, see [`g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation_guide.md).
 
-## Generation telemetry interface (proposed)
+## Generation counter interface
 
-There is no new network or user-facing API. `VllmClient.complete()` will receive an
+There is no new network or user-facing API. `VllmClient.complete()` receives an
 internal call context (`run_id`, `method`, `sample_id`, `stage`, `logical_call_id`)
-and emit one local event after each HTTP attempt. The provider call remains the same
-Chat Completions endpoint. The event schema and error outcomes are defined in
-[`generation_benchmark_telemetry_design.md`](generation_benchmark_telemetry_design.md);
-the report builder consumes files only and makes no model request.
+per-case counter and updates it after each HTTP attempt. The provider call remains
+the same Chat Completions endpoint. The final JSONL contract adds:
+
+```json
+{"input_token": 123, "output_token": 45, "num_request": 7, "num_retry": 2, "num_error_request": 1}
+```
+
+`input_token` and `output_token` are `null` when the provider does not return usage.
