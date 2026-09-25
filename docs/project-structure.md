@@ -281,3 +281,18 @@ JSONL and dashboard overrides.
 
 The detailed code-reading map for the three active generator packages is
 [`docs/g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation_guide.md).
+
+### Local telemetry paths
+
+```text
+g3_consensus_annotation/telemetry.py       # [E] event context/writer owned by G3
+g4_critic_verifier/telemetry.py            # [E] event context/writer owned by G4
+g5_qa_refinement/telemetry.py              # [E] event context/writer owned by G5
+tools/build_generation_benchmark_report.py # [E] read-only JSONL/CSV report builder
+output/telemetry/<run_id>/g{3,4,5}_request_events.jsonl # [G] one event per HTTP attempt
+output/telemetry/<run_id>/generation_benchmark_report.md # [G] derived report
+```
+
+Each flow retains independent ownership; no new shared runtime package is proposed.
+The contract and dependency direction are specified in
+[`generation_benchmark_telemetry_design.md`](generation_benchmark_telemetry_design.md).

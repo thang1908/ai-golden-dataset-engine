@@ -13,6 +13,7 @@ from .errors import G3Error
 from .output import json_line, write_atomically
 from .parallel import bounded_parallel
 from .pipeline import run
+from .telemetry import TelemetryWriter, default_run_id
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TEST_DIR = REPOSITORY_ROOT / "sample" / "test"
@@ -44,6 +45,8 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--max-tokens", type=int, dest="VLLM_MAX_TOKENS")
     result.add_argument("--max-retries", type=int, dest="VLLM_MAX_RETRIES")
     result.add_argument("--workers", type=int, default=1, help="Maximum images processed concurrently (default: 1)")
+    result.add_argument("--telemetry-dir", type=Path, default=REPOSITORY_ROOT / "output" / "telemetry")
+    result.add_argument("--run-id", help="Identifier shared by prediction rows and request telemetry")
     result.add_argument("--verbose", action="store_true")
     return result
 
@@ -67,18 +70,21 @@ def main(argv: list[str] | None = None) -> int:
         settings = load_settings(dotenv_path=args.dotenv, overrides=overrides)
         samples = load_query_samples(args.test_dir)
         target = args.output_dir / "predictions.jsonl"
+        run_id = args.run_id or default_run_id("g3")
+        telemetry_path = args.telemetry_dir / run_id / "g3_request_events.jsonl"
         target.parent.mkdir(parents=True, exist_ok=True)
         succeeded = 0
-        with target.open("w", encoding="utf-8") as output, VllmClient(settings) as client:
+        with target.open("w", encoding="utf-8") as output, TelemetryWriter(telemetry_path) as telemetry, VllmClient(settings, telemetry=telemetry) as client:
             worker = lambda sample: generate_dataset(
-                [sample], lambda image: run(image, client), model=settings.model
+                [sample], lambda image, sample_id, telemetry_run_id: run(image, client, sample_id=sample_id, run_id=telemetry_run_id), model=settings.model, run_id=run_id,
+                metrics_for_sample=lambda sample_id: telemetry.sample_summary(run_id=run_id, method="g3", sample_id=sample_id),
             )[0]
             for row in bounded_parallel(samples, worker, args.workers):
                 output.write(json_line(row))
                 output.flush()
                 os.fsync(output.fileno())
                 succeeded += row["status"] == "success"
-        print(f"G3 generated {succeeded}/{len(samples)} predictions: {target}")
+        print(f"G3 generated {succeeded}/{len(samples)} predictions: {target}\nrun_id: {run_id}\nrequest telemetry: {telemetry_path}")
         return 0 if succeeded == len(samples) else 1
     except (G3Error, OSError, ValueError) as exc:
         print(f"G3 error: {exc}", file=sys.stderr)

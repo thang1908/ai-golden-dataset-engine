@@ -167,3 +167,13 @@ local JSONL/overlay data and no network or model call occurs.
 
 The request-count formulas and worker/concurrency behavior for G3–G5 generation
 are documented in [`g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation_guide.md).
+
+## Local benchmark telemetry
+
+The existing local process writes telemetry JSONL to its run directory; no external
+collector, queue, database, Langfuse or LangSmith is required. A lock protects
+concurrent worker append operations. This introduces local disk growth proportional
+to HTTP attempts, while preserving retry/accounting evidence if a run terminates.
+Token totals depend on provider `usage` availability (OQ-023); monetary cost needs
+an approved price card (OQ-024). See
+[`generation_benchmark_telemetry_design.md`](generation_benchmark_telemetry_design.md).

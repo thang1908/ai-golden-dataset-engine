@@ -8,6 +8,7 @@ from .errors import G5Error, ResponseValidationError
 from .prompts import answers_prompt, compare_prompt, draft_prompt, questions_prompt
 from .taxonomy import attribute_json_schema, validate_attributes
 from .translation import translate_caption
+from .telemetry import CallContext, SampleCallFactory
 
 ANNOTATION_SCHEMA = {"type": "object", "properties": {"caption": {"type": "string", "minLength": 1, "maxLength": 500}, "attributes": attribute_json_schema()}, "required": ["caption", "attributes"], "additionalProperties": False}
 QUESTION_SCHEMA = {"type": "object", "properties": {"questions": {"type": "array", "minItems": 1, "maxItems": 30, "items": {"type": "object", "properties": {"id": {"type": "string", "minLength": 1, "maxLength": 50}, "target": {"type": "string", "minLength": 1, "maxLength": 100}, "question": {"type": "string", "minLength": 1, "maxLength": 400}}, "required": ["id", "target", "question"], "additionalProperties": False}}}, "required": ["questions"], "additionalProperties": False}
@@ -39,7 +40,7 @@ def _validated(stage: str, operation, validate):
     # Retry the model once after the transport-level retries in VllmClient are exhausted.
     for _ in range(2):
         try:
-            return validate(_stage(stage, operation))
+            return validate(_stage(stage, operation()))
         except ResponseValidationError as exc:
             last_error = exc
     assert last_error is not None
@@ -97,32 +98,33 @@ def _comparison(value: dict[str, Any]) -> tuple[str, list[str]]:
     return decision, corrections
 
 
-def run(image: bytes, client: VllmClient, *, max_refinements: int = 2) -> dict[str, Any]:
+def run(image: bytes, client: VllmClient, *, max_refinements: int = 2, sample_id: str = "manual", run_id: str = "manual") -> dict[str, Any]:
     if max_refinements < 0: raise ValueError("max_refinements cannot be negative")
     corrections: list[str] | None = None
+    calls = SampleCallFactory(run_id=run_id, method="g5", sample_id=sample_id)
     for round_index in range(max_refinements + 1):
         draft = _validated(
             "draft_annotation",
-            lambda: draft_agent(image, corrections, client, ANNOTATION_SCHEMA),
+            lambda: lambda: draft_agent(image, corrections, client, ANNOTATION_SCHEMA, calls.next("draft_annotation")),
             _annotation,
         )
         questions = _validated(
             "verification_questions",
-            lambda: question_agent(draft, client, QUESTION_SCHEMA),
+            lambda: lambda: question_agent(draft, client, QUESTION_SCHEMA, calls.next("verification_questions")),
             _questions,
         )
         question_ids = {item["id"] for item in questions}
         answers = _validated(
             "image_answers",
-            lambda: answer_agent(image, questions, client, ANSWER_SCHEMA),
+            lambda: lambda: answer_agent(image, questions, client, ANSWER_SCHEMA, calls.next("image_answers")),
             lambda value: _answers(value, question_ids),
         )
         decision, corrections = _validated(
-            "comparison", lambda: compare_agent(draft, answers, client, COMPARE_SCHEMA), _comparison
+            "comparison", lambda: lambda: compare_agent(draft, answers, client, COMPARE_SCHEMA, calls.next("comparison")), _comparison
         )
         if decision == "accept":
             caption_vi = _stage(
-                "caption_vietnamese", lambda: vietnamese_translation_agent(draft["caption"], client)
+                "caption_vietnamese", lambda: vietnamese_translation_agent(draft["caption"], client, calls.next("caption_vietnamese"))
             )
             return {
                 **draft,
@@ -132,7 +134,7 @@ def run(image: bytes, client: VllmClient, *, max_refinements: int = 2) -> dict[s
             }
         if round_index == max_refinements:
             caption_vi = _stage(
-                "caption_vietnamese", lambda: vietnamese_translation_agent(draft["caption"], client)
+                "caption_vietnamese", lambda: vietnamese_translation_agent(draft["caption"], client, calls.next("caption_vietnamese"))
             )
             return {
                 **draft,

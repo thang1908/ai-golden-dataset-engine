@@ -4,6 +4,7 @@ from typing import Any
 
 from .client import VllmClient
 from .errors import ResponseValidationError
+from .telemetry import CallContext
 
 TRANSLATION_SCHEMA = {
     "type": "object",
@@ -13,7 +14,7 @@ TRANSLATION_SCHEMA = {
 }
 
 
-def translate_caption(client: VllmClient, caption: str) -> str:
+def translate_caption(client: VllmClient, caption: str, context: CallContext) -> str:
     prompt = (
         "Translate this factual person-image caption into natural Vietnamese. Preserve only "
         "the stated facts; do not add identity, relationships, location, intent, or details. "
@@ -21,7 +22,7 @@ def translate_caption(client: VllmClient, caption: str) -> str:
         + caption
     )
     value: dict[str, Any] = client.complete(
-        prompt=prompt, schema_name="caption_vietnamese", schema=TRANSLATION_SCHEMA
+        prompt=prompt, schema_name="caption_vietnamese", schema=TRANSLATION_SCHEMA, call_context=context
     )
     caption_vi = value.get("caption_vi")
     if set(value) != {"caption_vi"} or not isinstance(caption_vi, str):
@@ -30,4 +31,3 @@ def translate_caption(client: VllmClient, caption: str) -> str:
     if not caption_vi or len(caption_vi) > 500:
         raise ResponseValidationError("Model returned an invalid Vietnamese caption")
     return caption_vi
-

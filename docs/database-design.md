@@ -176,3 +176,12 @@ deleted and regenerated from JSONL plus overlay.
 
 The final generator records and the transient state intentionally not persisted in
 those records are documented in [`g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation_guide.md).
+
+## Proposed generation telemetry artifact
+
+No database is added. `output/telemetry/<run_id>/request_events.jsonl` is an
+append-only local event artifact, one row per VLLM HTTP attempt. Its compound
+logical identity is `(run_id, logical_call_id, http_attempt)` and it is joined
+read-only with `predictions.jsonl` by `(run_id, method, sample_id)`. Prompts, images,
+credentials and raw provider payloads are excluded (BR-031). See
+[`generation_benchmark_telemetry_design.md`](generation_benchmark_telemetry_design.md).

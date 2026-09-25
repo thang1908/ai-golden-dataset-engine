@@ -347,3 +347,21 @@ For exact node sequencing and evidence flow inside the independent G3, G4, and G
 generators, see [`g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation_guide.md).
 That document is an observed-code reference; it does not alter the architecture
 requirements in this document.
+
+## Generation benchmark telemetry (proposed)
+
+```mermaid
+flowchart LR
+  N["G3/G4/G5 node"] --> C["VllmClient"]
+  C --> V["VLLM completion"]
+  C --> T["Local request_events.jsonl"]
+  T --> B["Benchmark report builder"]
+  P["predictions.jsonl"] --> B
+  B --> R["Markdown + CSV report"]
+```
+
+Telemetry is a local append-only side artifact (FR-048–051), not a queue, database
+or third-party observability service. It records one event per HTTP attempt at the
+client boundary, so retry accounting remains accurate. The detailed event contract,
+privacy boundary and failure behavior are in
+[`generation_benchmark_telemetry_design.md`](generation_benchmark_telemetry_design.md).

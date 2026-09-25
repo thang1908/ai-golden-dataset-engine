@@ -241,3 +241,12 @@ workbook write changes the evaluation JSONL or human overlay contract.
 
 For the local CLI call sequence and per-node VLLM request contracts of the G3–G5
 generators, see [`g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation_guide.md).
+
+## Generation telemetry interface (proposed)
+
+There is no new network or user-facing API. `VllmClient.complete()` will receive an
+internal call context (`run_id`, `method`, `sample_id`, `stage`, `logical_call_id`)
+and emit one local event after each HTTP attempt. The provider call remains the same
+Chat Completions endpoint. The event schema and error outcomes are defined in
+[`generation_benchmark_telemetry_design.md`](generation_benchmark_telemetry_design.md);
+the report builder consumes files only and makes no model request.

@@ -8,6 +8,7 @@ from .errors import ResponseValidationError
 from .prompts import caption_prompt, consensus_prompt, observer_prompt
 from .taxonomy import attribute_json_schema, validate_attributes
 from .translation import translate_caption
+from .telemetry import SampleCallFactory
 
 ANNOTATION_SCHEMA = {
     "type": "object",
@@ -45,26 +46,27 @@ def _annotation(value: dict[str, Any]) -> dict[str, Any]:
         raise ResponseValidationError("Model returned an invalid observer annotation") from exc
 
 
-def run(image: bytes, client: VllmClient) -> dict[str, Any]:
+def run(image: bytes, client: VllmClient, *, sample_id: str = "manual", run_id: str = "manual") -> dict[str, Any]:
+    calls = SampleCallFactory(run_id=run_id, method="g3", sample_id=sample_id)
     candidates = [
         _annotation(
-            observer_agent(index, image, client, ANNOTATION_SCHEMA)
+            observer_agent(index, image, client, ANNOTATION_SCHEMA, calls.next(f"observer_{index + 1}"))
         )
         for index in range(4)
     ]
-    consensus = consensus_agent(image, candidates, client, CONSENSUS_SCHEMA)
+    consensus = consensus_agent(image, candidates, client, CONSENSUS_SCHEMA, calls.next("consensus"))
     try:
         if set(consensus) != {"attributes"}:
             raise ValueError
         attributes = validate_attributes(consensus["attributes"])
     except (KeyError, TypeError, ValueError) as exc:
         raise ResponseValidationError("Model returned invalid consensus attributes") from exc
-    caption_response = caption_agent(attributes, client, CAPTION_SCHEMA)
+    caption_response = caption_agent(attributes, client, CAPTION_SCHEMA, calls.next("caption"))
     caption = caption_response.get("caption")
     if not isinstance(caption, str) or not (caption := caption.strip()) or len(caption) > 500:
         raise ResponseValidationError("Model returned an invalid caption")
     return {
         "caption": caption,
-        "caption_vi": vietnamese_translation_agent(caption, client),
+        "caption_vi": vietnamese_translation_agent(caption, client, calls.next("caption_vietnamese")),
         "attributes": attributes,
     }

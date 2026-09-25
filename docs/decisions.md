@@ -17,12 +17,13 @@
 | ADR-011 | Factuality-first, nullable AI Harness evaluation v2 | Proposed |
 | ADR-012 | Local dashboard and Excel consume evaluation v2 separately | Proposed |
 | ADR-013 | Isolate caption factuality from attribute reference context | Proposed |
+| ADR-016 | Local client-boundary telemetry for generation benchmark | Accepted |
 
 ## ADR-001: Five independent vertical flow packages
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-09-22
-- Owner: pending user approval
+- Owner: generation workflow maintainers
 - Context: FR-001 asks for five folders and C1 is intentionally independent.
 - Decision: create five top-level packages, each owning its adapters, taxonomy,
   contracts, prompts, orchestration, CLI, and documentation. Do not import C1 or
@@ -254,3 +255,20 @@ The current code behavior of G3, G4, and G5 is recorded in
 This is a descriptive reference, not a new ADR: future changes to loop semantics,
 dataset mapping, or observability still require an explicit decision where they
 change approved behavior.
+
+## ADR-016: Local client-boundary telemetry for generation benchmark
+
+- Status: Proposed
+- Date: 2026-09-24
+- Owner: pending user approval
+- Context: mentor needs request and token reporting for G3–G5. Pipeline-level
+  timing cannot count retry attempts or provider usage reliably (FR-048–051).
+- Decision: write one privacy-safe local JSONL event for each VLLM HTTP attempt at
+  the package-local client boundary; build Markdown/CSV aggregates offline. Distinguish
+  logical calls from actual requests, and retain provider token fields only when present.
+- Alternatives: infer counts from workflow topology; add Langfuse/LangSmith now;
+  estimate tokens with a local tokenizer. These either miss retries, add an external
+  dependency, or create unverified token values.
+- Consequences: accurate local benchmark evidence with small code changes in three
+  packages; no hosted observability UI. Exact token totals remain conditional on
+  OQ-023, and monetary cost remains conditional on OQ-024.

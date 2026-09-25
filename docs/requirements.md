@@ -320,3 +320,20 @@ The code-level behavior of the three active generative flows is documented in
 [`g3_g5_flow_implementation_guide.md`](g3_g5_flow_implementation_guide.md). It
 distinguishes observed implementation behavior from the requirements above,
 including node inputs, call counts, retry behavior, loop limits, and output states.
+
+## Generation benchmark telemetry
+
+| ID | Requirement | Acceptance condition |
+|---|---|---|
+| FR-048 | Record one local telemetry event for every VLLM HTTP attempt made by G3, G4, or G5. | Event includes run, sample, method, stage, attempt, HTTP outcome and latency; no prompt, image, token, or raw response is persisted. |
+| FR-049 | Distinguish logical model calls from actual HTTP requests including retries. | Benchmark report shows both counts per method and stage. |
+| FR-050 | Persist provider token usage only when supplied by the response. | Report shows input/output/total tokens and token coverage; missing usage is `N/A`, never estimated as fact. |
+| FR-051 | Build a local Markdown/CSV benchmark report from telemetry plus predictions. | Report contains case success/error, requests, retries, token coverage and P50/P95 latency by method/stage. |
+
+| ID | Rule |
+|---|---|
+| BR-031 | Telemetry must not persist prompts, Base64 image, OAuth credentials, bearer tokens or raw model responses. |
+| BR-032 | A retry creates another actual-request event but retains the same logical-call identity. |
+| BR-033 | OAuth refreshes are outside model-request/token metrics unless explicitly requested. |
+
+No price/currency metric is in scope without an authoritative provider price card (OQ-024).
