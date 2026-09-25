@@ -27,6 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-attempts", type=int, default=20)
     parser.add_argument("--max-retries", type=int, dest="VLLM_MAX_RETRIES")
     parser.add_argument("--workers", type=int, default=1, help="Maximum images processed concurrently (default: 1)")
+    parser.add_argument("--limit", type=int, help="Process only the first N query cases in manifest order")
     parser.add_argument("--run-id", help="Identifier shared by prediction rows and request telemetry")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.WARNING)
@@ -36,6 +37,10 @@ def main(argv: list[str] | None = None) -> int:
             overrides={"G4_MODEL": args.G4_MODEL, "VLLM_MAX_RETRIES": args.VLLM_MAX_RETRIES},
         )
         samples = load_query_samples(args.test_dir)
+        if args.limit is not None:
+            if args.limit < 1:
+                raise ValueError("--limit must be at least one")
+            samples = samples[:args.limit]
         target = args.output_dir / "predictions.jsonl"
         run_id = args.run_id or default_run_id("g4")
         target.parent.mkdir(parents=True, exist_ok=True)

@@ -45,6 +45,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--max-tokens", type=int, dest="VLLM_MAX_TOKENS")
     result.add_argument("--max-retries", type=int, dest="VLLM_MAX_RETRIES")
     result.add_argument("--workers", type=int, default=1, help="Maximum images processed concurrently (default: 1)")
+    result.add_argument("--limit", type=int, help="Process only the first N query cases in manifest order")
     result.add_argument("--verbose", action="store_true")
     return result
 
@@ -67,6 +68,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         settings = load_settings(dotenv_path=args.dotenv, overrides=overrides)
         samples = load_query_samples(args.test_dir)
+        if args.limit is not None:
+            if args.limit < 1:
+                raise ValueError("--limit must be at least one")
+            samples = samples[:args.limit]
         target = args.output_dir / "predictions.jsonl"
         target.parent.mkdir(parents=True, exist_ok=True)
         succeeded = 0
