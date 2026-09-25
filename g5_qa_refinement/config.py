@@ -47,6 +47,7 @@ class Settings:
     timeout_seconds: float = 120
     max_tokens: int = 1024
     max_retries: int = 3
+    max_requests_per_minute: int = 150
     enable_thinking: bool = True
 
     def __post_init__(self) -> None:
@@ -56,8 +57,8 @@ class Settings:
             raise ConfigurationError(
                 "VLLM_BASE_URL, VLLM_CLIENT_ID, VLLM_CLIENT_SECRET and VLLM_PROJECT_ID are required"
             )
-        if self.timeout_seconds <= 0 or self.max_tokens < 64 or self.max_retries < 1:
-            raise ConfigurationError("G5 timeout, max tokens or retries are invalid")
+        if self.timeout_seconds <= 0 or self.max_tokens < 64 or self.max_retries < 1 or self.max_requests_per_minute < 1:
+            raise ConfigurationError("G5 timeout, max tokens, retries or request limit are invalid")
 
     @property
     def service_url(self) -> str:
@@ -88,9 +89,9 @@ def load_settings(
             timeout_seconds=float(value("VLLM_TIMEOUT_SECONDS", "120")),
             max_tokens=int(value("VLLM_MAX_TOKENS", "1024")),
             max_retries=int(value("VLLM_MAX_RETRIES", "3")),
+            max_requests_per_minute=int(value("VLLM_MAX_REQUESTS_PER_MINUTE", "150")),
             enable_thinking=_boolean(value("VLLM_ENABLE_THINKING", "true")),
         )
     except ValueError as exc:
         raise ConfigurationError("G5 numeric configuration is invalid") from exc
-
 

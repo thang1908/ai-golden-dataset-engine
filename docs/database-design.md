@@ -185,3 +185,6 @@ and `num_error_request` (non-negative integers). `num_request` includes every mo
 HTTP attempt; retries and failed attempts remain separately visible (BR-034). Token
 values are `null` if the provider omits `usage`; they are never estimated. Prompts,
 images, credentials and raw provider payloads are not stored (BR-031).
+
+Rate-limit timestamps live only in process memory. They are intentionally not stored
+because they expire after 60 seconds and have no meaning after a process restart.

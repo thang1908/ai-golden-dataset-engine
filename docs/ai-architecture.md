@@ -229,3 +229,6 @@ client boundary. It does not score, rank, select, or alter generated annotations
 The final prediction receives `input_token`, `output_token`, `num_request`,
 `num_retry`, and `num_error_request`; tokens remain `null` when the provider does
 not return `usage` (OQ-023).
+
+All model stages in one generator process share a rolling request limiter configured
+by `VLLM_MAX_REQUESTS_PER_MINUTE` (FR-052).

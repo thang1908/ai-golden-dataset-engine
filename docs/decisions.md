@@ -18,6 +18,7 @@
 | ADR-012 | Local dashboard and Excel consume evaluation v2 separately | Proposed |
 | ADR-013 | Isolate caption factuality from attribute reference context | Proposed |
 | ADR-016 | Per-case request/token fields with terminal progress logging | Accepted |
+| ADR-017 | Process-local rolling request limiter | Accepted |
 
 ## ADR-001: Five independent vertical flow packages
 
@@ -273,3 +274,13 @@ change approved behavior.
   output/log simplicity; hosted tools add a dependency; timers miss retries.
 - Consequences: concise outputs and no telemetry artifacts; node-level historical
   retry diagnosis is no longer retained. Exact token values remain conditional on OQ-023.
+
+## ADR-017: Process-local rolling request limiter
+
+- Status: Accepted
+- Context: the user requires a ceiling of 150 VLLM model requests per minute across
+  concurrent workers in one flow process (FR-052).
+- Decision: use a package-local, thread-safe rolling 60-second limiter directly
+  before Chat Completions calls. It waits rather than drops calls; OAuth is excluded.
+- Consequences: protects one process from server rate bursts without adding Redis or
+  a service. Separate processes remain uncoordinated (OQ-025).

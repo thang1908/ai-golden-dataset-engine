@@ -368,3 +368,7 @@ prediction JSONL row.
 The client prints a safe progress line to the terminal; no per-request log file is
 written. This deliberately avoids a queue, database and third-party observability
 service.
+
+Before each VLLM model HTTP attempt, the one client shared by all workers applies a
+thread-safe rolling 60-second limiter from `VLLM_MAX_REQUESTS_PER_MINUTE` (FR-052).
+It waits for capacity rather than dropping or reordering a case.

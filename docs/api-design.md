@@ -254,3 +254,6 @@ the same Chat Completions endpoint. The final JSONL contract adds:
 ```
 
 `input_token` and `output_token` are `null` when the provider does not return usage.
+
+Internally, `VLLM_MAX_REQUESTS_PER_MINUTE` limits Chat Completions attempts per
+process. OAuth token calls are outside that limiter and prediction metric contract.

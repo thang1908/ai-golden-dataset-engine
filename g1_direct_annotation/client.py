@@ -14,6 +14,7 @@ from .image import to_data_url
 from .prompts import annotation_prompt
 from .taxonomy import attribute_json_schema, validate_attributes
 from .telemetry import CallContext, CaseMetrics
+from .rate_limit import RequestRateLimiter
 
 RETRYABLE_STATUS_CODES = {408, 409, 429, 500, 502, 503, 504}
 
@@ -97,6 +98,7 @@ class VllmClient:
             sleep,
         )
         self._tokens = TokenProvider(settings, self._client)
+        self._rate_limiter = RequestRateLimiter(settings.max_requests_per_minute)
 
     def close(self) -> None:
         if self._owns_client:
@@ -117,6 +119,7 @@ class VllmClient:
             try:
                 token = self._tokens.get(force_refresh=refresh)
                 refresh = False
+                self._rate_limiter.acquire()
                 response = self._client.post(
                     f"{self.settings.service_url}/v1/chat/completions",
                     headers={
@@ -179,6 +182,7 @@ class VllmClient:
             try:
                 token = self._tokens.get(force_refresh=refresh)
                 refresh = False
+                self._rate_limiter.acquire()
                 response = self._client.post(f"{self.settings.service_url}/v1/chat/completions", headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, json=body)
             except httpx.HTTPError as exc:
                 if metrics and context: metrics.record(context, http_attempt=number, outcome="transport_error", input_token=None, output_token=None)

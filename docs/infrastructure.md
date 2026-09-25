@@ -177,3 +177,6 @@ protects concurrent worker counter updates.
 Token totals depend on provider `usage` availability (OQ-023); monetary cost needs
 an approved price card (OQ-024). See
 [`generation_benchmark_telemetry_design.md`](generation_benchmark_telemetry_design.md).
+
+`VLLM_MAX_REQUESTS_PER_MINUTE` is process-local. Multiple simultaneous generator
+processes can exceed the same API credential's aggregate server quota (OQ-025).

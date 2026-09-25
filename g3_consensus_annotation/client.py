@@ -12,6 +12,7 @@ from .config import Settings
 from .errors import ApiError, ResponseValidationError
 from .image import to_data_url
 from .telemetry import CallContext, TelemetryWriter
+from .rate_limit import RequestRateLimiter
 
 RETRYABLE_STATUS_CODES = {408, 409, 429, 500, 502, 503, 504}
 
@@ -51,6 +52,7 @@ class VllmClient:
         self._tokens = TokenProvider(settings, self._client)
         self._sleep = sleep
         self._telemetry = telemetry
+        self._rate_limiter = RequestRateLimiter(settings.max_requests_per_minute)
 
     def _record(
         self,
@@ -122,6 +124,7 @@ class VllmClient:
             try:
                 token = self._tokens.get(force_refresh=refresh)
                 refresh = False
+                self._rate_limiter.acquire()
                 response = self._client.post(
                     f"{self.settings.service_url}/v1/chat/completions",
                     headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},

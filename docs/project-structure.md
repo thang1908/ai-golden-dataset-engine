@@ -296,3 +296,6 @@ output/g{1,2,3,4,5}/predictions.jsonl      # [G] final row contains token/reques
 Each flow retains independent ownership; no new shared runtime package is proposed.
 The contract and dependency direction are specified in
 [`generation_benchmark_telemetry_design.md`](generation_benchmark_telemetry_design.md).
+
+Each G1–G5 package owns a `rate_limit.py` module. It is process-local and is used by
+that package's VLLM client before Chat Completions requests (FR-052).

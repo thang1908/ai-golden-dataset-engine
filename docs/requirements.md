@@ -336,5 +336,8 @@ including node inputs, call counts, retry behavior, loop limits, and output stat
 | BR-032 | A retry creates another actual-request event but retains the same logical-call identity. |
 | BR-033 | OAuth refreshes are outside model-request/token metrics unless explicitly requested. |
 | BR-034 | `num_request` is every VLLM model HTTP attempt; `num_retry` counts attempts after the first attempt of a logical model call; `num_error_request` counts attempts whose final HTTP/transport/response-parse outcome is unsuccessful. |
+| BR-035 | Rate-limit waiting happens before a model HTTP attempt and does not increase request, retry, error, or token counters. OAuth is excluded. |
+
+| FR-052 | Enforce `VLLM_MAX_REQUESTS_PER_MINUTE` across all workers in one G1–G5 process. | At 150, no more than 150 VLLM model attempts start in any rolling 60-second window. |
 
 No price/currency metric is in scope without an authoritative provider price card (OQ-024).
