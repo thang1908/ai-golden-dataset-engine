@@ -29,13 +29,13 @@ def generator_prompt(feedback: list[dict[str, str]] | None = None) -> str:
 
 def critic_prompt(draft: dict[str, Any]) -> str:
     return (
-        "Inspect this image and draft annotation. Return only concrete unsupported, missing, or "
-        "taxonomy-invalid claims as issues. Also report a material caption omission when a clearly "
-        "visible age/gender presentation, hair, clothing, footwear, bag, or accessory is present "
-        "in the image but absent from the caption. Do not require uncertain details and do not score "
-        "it. Return exactly one JSON object with the key `issues`; an empty result is valid and "
-        "must be `{" + '"issues":[]' + "}`. Do not include Markdown, explanations, or any text "
-        "outside that JSON object.\nDraft:\n"
+        "Inspect this image and draft annotation. Report only claims that are visually false, "
+        "contradictory, or taxonomy-invalid and therefore require regeneration. A caption may omit "
+        "a visible detail when every fact it does state is supported; omission alone is not an issue. "
+        "Do not require uncertain details and do not score it. Return at most 6 concise issues. "
+        "Each issue and correction must be at most 20 words. Return exactly one JSON object with "
+        "the key `issues`; an empty result is valid and must be `{" + '"issues":[]' + "}`. Do not "
+        "include Markdown, explanations, or text outside that JSON object.\nDraft:\n"
         + json.dumps(draft, ensure_ascii=False)
     )
 
@@ -43,8 +43,10 @@ def critic_prompt(draft: dict[str, Any]) -> str:
 def verifier_prompt(draft: dict[str, Any], issues: list[dict[str, str]]) -> str:
     return (
         "Independently verify the draft annotation against the image and critic issues. Return "
-        "accept only if the caption and all determined attributes are visibly supported; "
-        "otherwise reject with concrete reasons. Do not use scores.\nDraft:\n"
+        "accept when the stated caption facts and non-unknown attributes are visibly supported. "
+        "Do not reject merely because the caption omits a visible detail. Reject only concrete "
+        "false, contradictory, or taxonomy-invalid claims. Return at most 6 concise reasons and "
+        "do not use scores.\nDraft:\n"
         + json.dumps(draft, ensure_ascii=False)
         + "\nIssues:\n"
         + json.dumps(issues, ensure_ascii=False)

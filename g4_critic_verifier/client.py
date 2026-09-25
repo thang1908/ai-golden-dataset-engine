@@ -77,9 +77,11 @@ class VllmClient:
             "messages": [{"role": "user", "content": content}],
             "stream": False,
             "temperature": 0,
-            "max_tokens": self.settings.max_tokens,
+            "max_tokens": min(self.settings.max_tokens, 512)
+            if schema_name in {"critic_issues", "verification"}
+            else self.settings.max_tokens,
             "chat_template_kwargs": {
-                "enable_thinking": self.settings.enable_thinking and schema_name != "caption_vietnamese"
+                "enable_thinking": self.settings.enable_thinking and schema_name == "draft_annotation"
             },
             "response_format": {"type": "json_schema", "json_schema": {"name": schema_name, "schema": schema}},
         }

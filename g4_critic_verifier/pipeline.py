@@ -11,8 +11,8 @@ from .translation import translate_caption
 from .telemetry import SampleCallFactory
 
 ANNOTATION_SCHEMA = {"type": "object", "properties": {"caption": {"type": "string", "minLength": 1, "maxLength": 500}, "attributes": attribute_json_schema()}, "required": ["caption", "attributes"], "additionalProperties": False}
-CRITIC_SCHEMA = {"type": "object", "properties": {"issues": {"type": "array", "maxItems": 30, "items": {"type": "object", "properties": {"target": {"type": "string", "maxLength": 100}, "issue": {"type": "string", "minLength": 1, "maxLength": 500}, "suggested_correction": {"type": "string", "minLength": 1, "maxLength": 500}}, "required": ["target", "issue", "suggested_correction"], "additionalProperties": False}}}, "required": ["issues"], "additionalProperties": False}
-VERIFIER_SCHEMA = {"type": "object", "properties": {"decision": {"type": "string", "enum": ["accept", "reject"]}, "reasons": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 500}, "maxItems": 30}}, "required": ["decision", "reasons"], "additionalProperties": False}
+CRITIC_SCHEMA = {"type": "object", "properties": {"issues": {"type": "array", "maxItems": 6, "items": {"type": "object", "properties": {"target": {"type": "string", "maxLength": 64}, "issue": {"type": "string", "minLength": 1, "maxLength": 180}, "suggested_correction": {"type": "string", "minLength": 1, "maxLength": 180}}, "required": ["target", "issue", "suggested_correction"], "additionalProperties": False}}}, "required": ["issues"], "additionalProperties": False}
+VERIFIER_SCHEMA = {"type": "object", "properties": {"decision": {"type": "string", "enum": ["accept", "reject"]}, "reasons": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 180}, "maxItems": 6}}, "required": ["decision", "reasons"], "additionalProperties": False}
 
 
 def _annotation(value: dict[str, Any]) -> dict[str, Any]:
@@ -30,11 +30,18 @@ def _annotation(value: dict[str, Any]) -> dict[str, Any]:
 
 def _issues(value: dict[str, Any]) -> list[dict[str, str]]:
     issues = value.get("issues")
-    if set(value) != {"issues"} or not isinstance(issues, list):
+    if set(value) != {"issues"} or not isinstance(issues, list) or len(issues) > 6:
         raise ResponseValidationError("Model returned invalid critic issues")
     result = []
     for issue in issues:
-        if not isinstance(issue, dict) or set(issue) != {"target", "issue", "suggested_correction"} or not all(isinstance(issue[key], str) and issue[key].strip() for key in issue):
+        if (
+            not isinstance(issue, dict)
+            or set(issue) != {"target", "issue", "suggested_correction"}
+            or not all(isinstance(issue[key], str) and issue[key].strip() for key in issue)
+            or len(issue["target"].strip()) > 64
+            or len(issue["issue"].strip()) > 180
+            or len(issue["suggested_correction"].strip()) > 180
+        ):
             raise ResponseValidationError("Model returned invalid critic issues")
         result.append({key: issue[key].strip() for key in issue})
     return result
@@ -63,7 +70,7 @@ def run(image: bytes, client: VllmClient, *, max_attempts: int = 3, sample_id: s
             "verifier", lambda: verifier_agent(image, draft, issues, client, VERIFIER_SCHEMA, calls.next("verifier"))
         )
         decision, reasons = verification.get("decision"), verification.get("reasons")
-        if decision not in {"accept", "reject"} or not isinstance(reasons, list) or not all(isinstance(reason, str) and reason.strip() for reason in reasons):
+        if decision not in {"accept", "reject"} or not isinstance(reasons, list) or len(reasons) > 6 or not all(isinstance(reason, str) and reason.strip() and len(reason.strip()) <= 180 for reason in reasons):
             raise ResponseValidationError("Model returned an invalid verifier decision")
         if decision == "accept":
             return {

@@ -162,5 +162,8 @@ class VllmClient:
                 return value
             except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
                 self._record(call_context, attempt=attempt_number, has_image=image is not None, outcome="response_parse_error", latency_ms=latency_ms, http_status=response.status_code, payload=response_payload, retry_reason="invalid_structured_json")
+                if attempt + 1 < self.settings.max_retries:
+                    self._sleep(_delay(response, attempt))
+                    continue
                 raise ResponseValidationError("Model returned invalid structured JSON") from exc
         raise ApiError("Chat Completions request failed after retries")
